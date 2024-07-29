@@ -1,7 +1,7 @@
 import numpy as np
 import graph_swarm
 
-def init_arena(grid_size, target_pos): 
+def init_arena(grid_size, target_pos, obstacles): 
     # Six different matrices, each representing the probability matrix for each orientation (measured in degrees)
     I_ACTIONS = {'FORWARD': 0.49, 'BACKWARD': 0.01, 'SMALL_TURN': 0.24, 'BIG_TURN': 0.01}	# I: Inside
     CW_ACTIONS = {'REFLECT': 0.6, 'BACKWARD': 0.15, 'SMALL_TURN': 0.15, 'BIG_TURN': 0.1}	# CW: Collide against the wall
@@ -370,6 +370,48 @@ def init_arena(grid_size, target_pos):
 
         Arena[info_to_state(x, y-1, orientation)] = 0
         Arena[info_to_state(x, y-1, orientation)][info_to_state(x, y, orientation)] = 1
+
+
+    '''
+    Adding obstacles, will modify how the arena works
+    Obstacles is a variable that is of [[(int, int)]] containing tuples that represent the nodes that have the nodes on them.
+    '''
+    for obstacle_nodes in obstacles:
+        
+        # Find all the available nodes
+        for i in range(len(obstacle_nodes)):
+            available_nodes = set()
+            # Analyze the node connected behind and in front
+            # Find all the available nodes and divide 1 by the number of available nodes to randomize its next move
+            curr_wall = obstacle_nodes[i]
+            x, y = curr_wall
+            prev_wall, next_wall = (0, 0), (0, 0)
+            if i == len(obstacle_nodes) - 1:
+                prev_wall, next_wall = obstacle_nodes[i-1], obstacle_nodes[0]
+            else:
+                prev_wall, next_wall = obstacle_nodes[i-1], obstacle_nodes[i+1]
+            nodes_to_check = [(x-1, y), (x-1, y+1), (x, y+1), (x+1, y), (x+1, y-1), (x, y-1), (x-1, y)]
+
+
+            # Find the next wall node going clockwise
+            for node in nodes_to_check:
+                if node == next_wall:
+                    break
+                available_nodes.add(node)
+
+            # Find the previous wall node going counter clockwise
+            for node in nodes_to_check[::-1]:
+                if node == prev_wall:
+                    break
+                available_nodes.add(node)
+        
+            wall_prob = 1.0 / len(available_nodes)
+            print(available_nodes)
+            for orientation in range(6):
+                Arena[info_to_state(x, y, orientation)] = 0
+                for node in available_nodes:
+                    Arena[info_to_state(x, y, orientation)][info_to_state(node[0], node[1], orientation)] = wall_prob
+
     return Arena
 
 
@@ -394,19 +436,21 @@ def get_robot_next_move(curr_states, robot_ind, probability_matrix, grid_size, c
         x, y, _ = state_to_info(next_state, grid_size)
     return next_state, (x, y)
 
-def start_robot_swarming(grid_size, target_pos, num_robots):
-    probability_matrix = init_arena(grid_size, target_pos)
+def start_robot_swarming(grid_size, target_pos, num_robots, obstacles=[], show_graph=True):
+    probability_matrix = init_arena(grid_size, target_pos, obstacles)
 
     def info_to_state(x, y, orientation):
         return 6 * (x + grid_size * y) + orientation
     
-    curr_states = [info_to_state(1, 0, 0), info_to_state(2, 0, 0), info_to_state(0, 0, 0),
+    curr_states = [info_to_state(0, 0, 0), info_to_state(2, 0, 0), info_to_state(1, 0, 0),
                     info_to_state(0, 1, 0),  info_to_state(1, 1, 0)]
-    
+
     curr_states = curr_states[:num_robots]
     history = [[] for _ in range(num_robots)]
     is_target_found = False
     current_positions = [(0, 0) for _ in range(num_robots)]
+
+    num_moves = 0
     while not is_target_found:
         for robot_ind in range(num_robots):
             x, y, _ = state_to_info(curr_states[robot_ind], grid_size)
@@ -416,7 +460,8 @@ def start_robot_swarming(grid_size, target_pos, num_robots):
                 is_target_found = True
             print("Robot #{} is now at ({}, {})".format(robot_ind, x, y))
             curr_states[robot_ind], current_positions[robot_ind] = get_robot_next_move(curr_states, robot_ind, probability_matrix, grid_size, current_positions)
-        print('\n')
-    graph_swarm.graph_arena(grid_size, target_pos, history)
-
-start_robot_swarming(20, (5, 5), 5)
+        print()
+        num_moves += 1
+    if show_graph:
+        graph_swarm.graph_arena(grid_size, target_pos, history, obstacles)
+    return num_moves

@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import matplotlib.animation as animation
 
-def graph_arena(grid_size, target_coords, robot_history):
+def graph_arena(grid_size, target_coords, robot_history, obstacles):
     grid_size -= 1
     # Given it's a square arena, we can slightly shear grid to become arena
     arena_size = (grid_size * 2, grid_size) # Two equalateral triangles per square unit after augments
@@ -45,15 +45,36 @@ def graph_arena(grid_size, target_coords, robot_history):
     def update(frame):
         ax.clear()
         robot_positions = [[] for _ in range(len(robot_history))]
+        prev_robot_positions = [[] for _ in range(len(robot_history))]
         for hist in range(len(robot_history)):
             robot_positions[hist] = robot_history[hist][frame]
+            if frame != 0:
+                prev_robot_positions[hist] = robot_history[hist][frame - 1]
+
         node_color = ['red' if node in robot_positions else 'black' for node in G.nodes()]
         nx.draw(G, pos, with_labels=False, node_size=((figure_size[0] + 500) / grid_size), node_color=node_color, edge_color='gray', ax=ax)
+
+        # Draw the lines between current and previous position
+        for i in range(len(robot_positions)):
+            if prev_robot_positions[i] != []:
+                prev_pos = prev_robot_positions[i]
+                curr_pos = robot_positions[i]
+                x_line = [pos[prev_pos][0], pos[curr_pos][0]]
+                y_line = [pos[prev_pos][1], pos[curr_pos][1]]
+                ax.plot(x_line, y_line, color='red')
         
         # Draw the target area
         if graph_target_coords:
             x_coords, y_coords = zip(*graph_target_coords)
             ax.fill(x_coords, y_coords, color='red', alpha=0.5)
+        
+        # Fill the space in the polygon formed by obstacles
+        if obstacles:
+            for obstacle in obstacles:
+                obstacle_coords = [pos[nodes] for nodes in obstacle]
+                x_obs, y_obs = zip(*obstacle_coords)
+                ax.fill(x_obs, y_obs, color='black', alpha=0.5)
+
 
     ani = animation.FuncAnimation(fig, update, frames=len(robot_history[0]), repeat=True, interval=500)
 
