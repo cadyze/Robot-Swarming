@@ -172,6 +172,14 @@ def init_arena(grid_size, target_pos):
     for y in range(1, grid_size - 1):
         x = X_LEVEL
         # TODO: Degree 0 and 300
+        curr_orientation = '0'
+        Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = 0.4
+        Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y+1, ORIENTATIONS['60'])] = 0.2
+        # Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y+1, ORIENTATIONS['120'])] =PW_ACTIONS[]
+        # Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = PW_ACTIONS
+        Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = 0.2
+        Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = 0.2
+
         curr_orientation = '60'
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = PW_ACTIONS['SMALL_TURN']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y+1, ORIENTATIONS['60'])] = PW_ACTIONS['FORWARD']
@@ -375,26 +383,40 @@ def state_to_info(state, grid_size):
     x = state % grid_size
     return x, y, orientation
 
-def get_robot_next_move(curr_state, probability_matrix):
-    p = probability_matrix[curr_state]
-    return np.random.choice(len(p), p=p)
+def get_robot_next_move(curr_states, robot_ind, probability_matrix, grid_size, current_positions):
+    p = probability_matrix[curr_states[robot_ind]]
+    next_state = np.random.choice(len(p), p=p)
+    x, y, _ = state_to_info(next_state, grid_size)
+    if (x, y) in current_positions:
+        # If interfering with another robot, just return its current state
+        print("ROBOT {} HAS COLLIDED at {}.".format(robot_ind, (x, y)))
+        next_state = curr_states[robot_ind]
+        x, y, _ = state_to_info(next_state, grid_size)
+    return next_state, (x, y)
 
-def start_robot_swarming(grid_size, target_pos):
+def start_robot_swarming(grid_size, target_pos, num_robots):
     probability_matrix = init_arena(grid_size, target_pos)
 
     def info_to_state(x, y, orientation):
         return 6 * (x + grid_size * y) + orientation
     
-    curr_state = info_to_state(1, 0, 0)
-    history = []
-    while True:
-        x, y, _ = state_to_info(curr_state, grid_size)
-        history.append((x, y))
-        if x == target_pos[0] and y == target_pos[1]:
-            print("FOUND TARGET AT ({}, {})".format(x, y))
-            break
-        print("Robot is now at ({}, {})".format(x, y))
-        curr_state = get_robot_next_move(curr_state, probability_matrix)
+    curr_states = [info_to_state(1, 0, 0), info_to_state(2, 0, 0), info_to_state(0, 0, 0),
+                    info_to_state(0, 1, 0),  info_to_state(1, 1, 0)]
+    
+    curr_states = curr_states[:num_robots]
+    history = [[] for _ in range(num_robots)]
+    is_target_found = False
+    current_positions = [(0, 0) for _ in range(num_robots)]
+    while not is_target_found:
+        for robot_ind in range(num_robots):
+            x, y, _ = state_to_info(curr_states[robot_ind], grid_size)
+            history[robot_ind].append((x, y))
+            if x == target_pos[0] and y == target_pos[1]:
+                print("FOUND TARGET AT ({}, {})".format(x, y))
+                is_target_found = True
+            print("Robot #{} is now at ({}, {})".format(robot_ind, x, y))
+            curr_states[robot_ind], current_positions[robot_ind] = get_robot_next_move(curr_states, robot_ind, probability_matrix, grid_size, current_positions)
+        print('\n')
     graph_swarm.graph_arena(grid_size, target_pos, history)
 
-start_robot_swarming(20, (5, 5))
+start_robot_swarming(20, (5, 5), 5)

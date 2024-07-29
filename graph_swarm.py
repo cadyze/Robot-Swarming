@@ -44,8 +44,10 @@ def graph_arena(grid_size, target_coords, robot_history):
 
     def update(frame):
         ax.clear()
-        current_target = robot_history[frame]
-        node_color = ['red' if node == current_target else 'black' for node in G.nodes()]
+        robot_positions = [[] for _ in range(len(robot_history))]
+        for hist in range(len(robot_history)):
+            robot_positions[hist] = robot_history[hist][frame]
+        node_color = ['red' if node in robot_positions else 'black' for node in G.nodes()]
         nx.draw(G, pos, with_labels=False, node_size=((figure_size[0] + 500) / grid_size), node_color=node_color, edge_color='gray', ax=ax)
         
         # Draw the target area
@@ -53,6 +55,6 @@ def graph_arena(grid_size, target_coords, robot_history):
             x_coords, y_coords = zip(*graph_target_coords)
             ax.fill(x_coords, y_coords, color='red', alpha=0.5)
 
-    ani = animation.FuncAnimation(fig, update, frames=len(robot_history), repeat=True, interval=500)
+    ani = animation.FuncAnimation(fig, update, frames=len(robot_history[0]), repeat=True, interval=500)
 
     plt.show()
