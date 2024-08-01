@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import matplotlib.animation as animation
 
-def graph_arena(grid_size, target_coords, robot_history, obstacles):
+def graph_arena(grid_size, target_coords, robot_history, obstacles, tracked_robot=-1):
     grid_size -= 1
     # Given it's a square arena, we can slightly shear grid to become arena
     arena_size = (grid_size * 2, grid_size) # Two equalateral triangles per square unit after augments
@@ -50,8 +50,19 @@ def graph_arena(grid_size, target_coords, robot_history, obstacles):
             robot_positions[hist] = robot_history[hist][frame]
             if frame != 0:
                 prev_robot_positions[hist] = robot_history[hist][frame - 1]
+        tracked_robot_node = (0, 0)
+        node_color = []
+        for node in G.nodes():
+            if node in robot_positions:
+                index = robot_positions.index(node)
+                if index == tracked_robot:
+                    tracked_robot_node = node
+                    node_color.append('green')
+                else:
+                    node_color.append('red')
+            else:
+                node_color.append('black')
 
-        node_color = ['red' if node in robot_positions else 'black' for node in G.nodes()]
         nx.draw(G, pos, with_labels=False, node_size=((figure_size[0] + 500) / grid_size), node_color=node_color, edge_color='gray', ax=ax)
 
         # Draw the lines between current and previous position
@@ -61,7 +72,11 @@ def graph_arena(grid_size, target_coords, robot_history, obstacles):
                 curr_pos = robot_positions[i]
                 x_line = [pos[prev_pos][0], pos[curr_pos][0]]
                 y_line = [pos[prev_pos][1], pos[curr_pos][1]]
-                ax.plot(x_line, y_line, color='red')
+                if i == tracked_robot:
+                    ax.plot(x_line, y_line, color='green')
+                else:
+                    ax.plot(x_line, y_line, color='red')
+
         
         # Draw the target area
         if graph_target_coords:

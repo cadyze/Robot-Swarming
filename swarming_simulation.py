@@ -1,6 +1,12 @@
 import numpy as np
 import graph_swarm
 
+from enum import Enum
+
+class COLLISION_PROTOCOL(Enum):
+    BREAK = 1
+    FIND_NEXT_AVAILABLE = 2
+
 def init_arena(grid_size, target_pos, obstacles): 
     # Six different matrices, each representing the probability matrix for each orientation (measured in degrees)
     I_ACTIONS = {'FORWARD': 0.49, 'BACKWARD': 0.01, 'SMALL_TURN': 0.24, 'BIG_TURN': 0.01}	# I: Inside
@@ -350,6 +356,7 @@ def init_arena(grid_size, target_pos, obstacles):
     Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = 0.5
     Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y+1, ORIENTATIONS['60'])] = 0.5
 
+    DyanmicObstacleArena = Arena.copy()
     # Modifying for hops to target, this assumes that the target has a one hop border
     x, y = target_pos
     for orientation in range(6):
@@ -406,13 +413,14 @@ def init_arena(grid_size, target_pos, obstacles):
                 available_nodes.add(node)
         
             wall_prob = 1.0 / len(available_nodes)
-            print(available_nodes)
             for orientation in range(6):
                 Arena[info_to_state(x, y, orientation)] = 0
+                DyanmicObstacleArena[info_to_state(x, y, orientation)] = 0
                 for node in available_nodes:
                     Arena[info_to_state(x, y, orientation)][info_to_state(node[0], node[1], orientation)] = wall_prob
+                    DyanmicObstacleArena[info_to_state(x, y, orientation)][info_to_state(node[0], node[1], orientation)] = wall_prob
 
-    return Arena
+    return Arena, DyanmicObstacleArena
 
 
 '''
@@ -425,19 +433,36 @@ def state_to_info(state, grid_size):
     x = state % grid_size
     return x, y, orientation
 
-def get_robot_next_move(curr_states, robot_ind, probability_matrix, grid_size, current_positions):
+# XXXX: Add different dynamic collision protocols, compare the histograms 
+# XXXX: Add tracking for a desired robot, only stop simulation when specified robot hits target
+# TODO: Add wait for all robots to find target 
+# Arena: 30x30, 150x150, 300x300
+# Number of Robots: 1, 5, 10, 20
+# Protocols: DON'T MOVE WHEN HIT, FIND NEXT AVAILABLE
+# TODO: Fix positioning when adding multiple robots (0 should be closest to target init)
+def get_robot_next_move(curr_states, robot_ind, probability_matrix, grid_size, current_positions, collision_protocol):
     p = probability_matrix[curr_states[robot_ind]]
     next_state = np.random.choice(len(p), p=p)
     x, y, _ = state_to_info(next_state, grid_size)
+        
     if (x, y) in current_positions:
-        # If interfering with another robot, just return its current state
-        print("ROBOT {} HAS COLLIDED at {}.".format(robot_ind, (x, y)))
-        next_state = curr_states[robot_ind]
-        x, y, _ = state_to_info(next_state, grid_size)
+        # If collding with another robot, just return its current state
+        # print("ROBOT {} HAS COLLIDED at {}.".format(robot_ind, (x, y)))
+        if collision_protocol == COLLISION_PROTOCOL.BREAK:
+            next_state = curr_states[robot_ind]
+            x, y, _ = state_to_info(next_state, grid_size)
+        elif collision_protocol == COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE:
+            max_iters = 100
+            for _ in range(max_iters):
+                next_state = np.random.choice(len(p), p=p)
+                x, y, _ = state_to_info(next_state, grid_size)
+                if (x, y) not in current_positions:
+                    break
     return next_state, (x, y)
 
-def start_robot_swarming(grid_size, target_pos, num_robots, obstacles=[], show_graph=True):
-    probability_matrix = init_arena(grid_size, target_pos, obstacles)
+def start_robot_swarming(grid_size, target_pos, num_robots, collision_protocol, 
+                         obstacles=[], show_graph=True, tracked_robot=-1):
+    Arena, DynamicObstacleArena = init_arena(grid_size, target_pos, obstacles)
 
     def info_to_state(x, y, orientation):
         return 6 * (x + grid_size * y) + orientation
@@ -455,13 +480,16 @@ def start_robot_swarming(grid_size, target_pos, num_robots, obstacles=[], show_g
         for robot_ind in range(num_robots):
             x, y, _ = state_to_info(curr_states[robot_ind], grid_size)
             history[robot_ind].append((x, y))
-            if x == target_pos[0] and y == target_pos[1]:
-                print("FOUND TARGET AT ({}, {})".format(x, y))
-                is_target_found = True
-            print("Robot #{} is now at ({}, {})".format(robot_ind, x, y))
-            curr_states[robot_ind], current_positions[robot_ind] = get_robot_next_move(curr_states, robot_ind, probability_matrix, grid_size, current_positions)
-        print()
+            if tracked_robot != -1:
+                if tracked_robot == robot_ind:
+                    if x == target_pos[0] and y == target_pos[1]:
+                        is_target_found = True
+                    curr_states[robot_ind], current_positions[robot_ind] = get_robot_next_move(curr_states, robot_ind, Arena, grid_size, current_positions, collision_protocol)
+                else:
+                    curr_states[robot_ind], current_positions[robot_ind] = get_robot_next_move(curr_states, robot_ind, DynamicObstacleArena, grid_size, current_positions, collision_protocol)
+            else:
+                curr_states[robot_ind], current_positions[robot_ind] = get_robot_next_move(curr_states, robot_ind, Arena, grid_size, current_positions, collision_protocol)
         num_moves += 1
     if show_graph:
-        graph_swarm.graph_arena(grid_size, target_pos, history, obstacles)
+        graph_swarm.graph_arena(grid_size, target_pos, history, obstacles, tracked_robot)
     return num_moves
