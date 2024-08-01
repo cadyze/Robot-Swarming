@@ -4,6 +4,7 @@ import matplotlib.animation as animation
 
 def graph_arena(grid_size, target_coords, robot_history, obstacles, tracked_robot=-1):
     grid_size -= 1
+    
     # Given it's a square arena, we can slightly shear grid to become arena
     arena_size = (grid_size * 2, grid_size) # Two equalateral triangles per square unit after augments
     G = nx.triangular_lattice_graph(arena_size[1], arena_size[0])
