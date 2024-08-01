@@ -15,5 +15,6 @@ moves = []
 grid_size = 10
 collision_protocol = swarming_simulation.COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE
 for i in range(1):
-    moves.append(swarming_simulation.start_robot_swarming(grid_size, (5, 5), 5, collision_protocol, obstacles=[], show_graph=True, tracked_robot=0))
+    moves.append(swarming_simulation.start_robot_swarming(grid_size, (5, 5), 5, collision_protocol, 
+                                                          obstacles=[], show_graph=True, wait_for_all=True))
 plot_histogram(moves, grid_size)

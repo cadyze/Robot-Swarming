@@ -435,7 +435,7 @@ def state_to_info(state, grid_size):
 
 # XXXX: Add different dynamic collision protocols, compare the histograms 
 # XXXX: Add tracking for a desired robot, only stop simulation when specified robot hits target
-# TODO: Add wait for all robots to find target 
+# XXXX: Add wait for all robots to find target 
 # Arena: 30x30, 150x150, 300x300
 # Number of Robots: 1, 5, 10, 20
 # Protocols: DON'T MOVE WHEN HIT, FIND NEXT AVAILABLE
@@ -461,7 +461,12 @@ def get_robot_next_move(curr_states, robot_ind, probability_matrix, grid_size, c
     return next_state, (x, y)
 
 def start_robot_swarming(grid_size, target_pos, num_robots, collision_protocol, 
-                         obstacles=[], show_graph=True, tracked_robot=-1):
+                         obstacles=[], show_graph=True, tracked_robot=-1, wait_for_all=False):
+    
+    if wait_for_all and tracked_robot != -1:
+        print("ERROR: CANNOT TRACK A ROBOT WHILE WAITING FOR ALL TO FINISH.")
+        return
+    
     Arena, DynamicObstacleArena = init_arena(grid_size, target_pos, obstacles)
 
     def info_to_state(x, y, orientation):
@@ -474,21 +479,38 @@ def start_robot_swarming(grid_size, target_pos, num_robots, collision_protocol,
     history = [[] for _ in range(num_robots)]
     is_target_found = False
     current_positions = [(0, 0) for _ in range(num_robots)]
+    robots_finished = [False for _ in range(num_robots)]
 
     num_moves = 0
     while not is_target_found:
         for robot_ind in range(num_robots):
             x, y, _ = state_to_info(curr_states[robot_ind], grid_size)
             history[robot_ind].append((x, y))
-            if tracked_robot != -1:
-                if tracked_robot == robot_ind:
+
+            if wait_for_all:
+                if x == target_pos[0] and y == target_pos[1]:
+                    # All finished robots will be relocated to off the board to avoid extra collisions
+                    robots_finished[robot_ind] = True
+                    current_positions[robot_ind] = (-1, -1)
+                else:
+                    curr_states[robot_ind], current_positions[robot_ind] = get_robot_next_move(curr_states, robot_ind, Arena, grid_size, current_positions, collision_protocol)
+            else:
+                # Code for tracking robots
+                if tracked_robot != -1:
+                    if tracked_robot == robot_ind:
+                        if x == target_pos[0] and y == target_pos[1]:
+                            is_target_found = True
+                        curr_states[robot_ind], current_positions[robot_ind] = get_robot_next_move(curr_states, robot_ind, Arena, grid_size, current_positions, collision_protocol)
+                    else:
+                        curr_states[robot_ind], current_positions[robot_ind] = get_robot_next_move(curr_states, robot_ind, DynamicObstacleArena, grid_size, current_positions, collision_protocol)
+                else:
+                    curr_states[robot_ind], current_positions[robot_ind] = get_robot_next_move(curr_states, robot_ind, Arena, grid_size, current_positions, collision_protocol)
                     if x == target_pos[0] and y == target_pos[1]:
                         is_target_found = True
-                    curr_states[robot_ind], current_positions[robot_ind] = get_robot_next_move(curr_states, robot_ind, Arena, grid_size, current_positions, collision_protocol)
-                else:
-                    curr_states[robot_ind], current_positions[robot_ind] = get_robot_next_move(curr_states, robot_ind, DynamicObstacleArena, grid_size, current_positions, collision_protocol)
-            else:
-                curr_states[robot_ind], current_positions[robot_ind] = get_robot_next_move(curr_states, robot_ind, Arena, grid_size, current_positions, collision_protocol)
+        
+        # Check goals for wait for all
+        if wait_for_all and all(robots_finished):
+            is_target_found = True
         num_moves += 1
     if show_graph:
         graph_swarm.graph_arena(grid_size, target_pos, history, obstacles, tracked_robot)
