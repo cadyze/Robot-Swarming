@@ -13,8 +13,8 @@ border_obstacle = [ (7, 5), (7, 4), (7, 3), (6, 3), (5, 3), (4, 4), (3, 5), (3, 
 obstacle2 = [(4, 2), (3, 3), (4, 3), (5, 2)]
 moves = []
 grid_size = 10
-collision_protocol = swarming_simulation.COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE
+collision_protocol = swarming_simulation.COLLISION_PROTOCOL.BREAK
 for i in range(1):
-    moves.append(swarming_simulation.start_robot_swarming(grid_size, (5, 5), 5, collision_protocol, 
-                                                          obstacles=[], show_graph=True, wait_for_all=True))
+    moves.append(swarming_simulation.start_robot_swarming(grid_size, (5, 5), 40, collision_protocol, 
+                                                          obstacles=[], show_graph=True, wait_for_all=False))
 plot_histogram(moves, grid_size)

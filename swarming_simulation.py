@@ -447,7 +447,6 @@ def get_robot_next_move(curr_states, robot_ind, probability_matrix, grid_size, c
         
     if (x, y) in current_positions:
         # If collding with another robot, just return its current state
-        # print("ROBOT {} HAS COLLIDED at {}.".format(robot_ind, (x, y)))
         if collision_protocol == COLLISION_PROTOCOL.BREAK:
             next_state = curr_states[robot_ind]
             x, y, _ = state_to_info(next_state, grid_size)
@@ -472,8 +471,31 @@ def start_robot_swarming(grid_size, target_pos, num_robots, collision_protocol,
     def info_to_state(x, y, orientation):
         return 6 * (x + grid_size * y) + orientation
     
-    curr_states = [info_to_state(0, 0, 0), info_to_state(2, 0, 0), info_to_state(1, 0, 0),
-                    info_to_state(0, 1, 0),  info_to_state(1, 1, 0)]
+    # Instantiate the lower left corner with number of drones starting at 0, 0
+    curr_states = [info_to_state(0, 0, 0)]
+    n_to_instantiate = num_robots - 1
+    x, y = 0, 1
+    layer = 1
+    while n_to_instantiate != 0:
+        # Instantiate a new robot
+        curr_states.append(info_to_state(x, y, 0))
+        n_to_instantiate -= 1
+
+        # Update for next coordinates
+        if y == 0:
+            layer += 1
+            y = layer
+            x = 0
+        else:
+            x += 1
+            y -= 1
+
+    # Reverse so that the first robot is able to move out freely
+    curr_states = curr_states[::-1]
+
+
+
+
 
     curr_states = curr_states[:num_robots]
     history = [[] for _ in range(num_robots)]
@@ -512,6 +534,7 @@ def start_robot_swarming(grid_size, target_pos, num_robots, collision_protocol,
         if wait_for_all and all(robots_finished):
             is_target_found = True
         num_moves += 1
+
     if show_graph:
         graph_swarm.graph_arena(grid_size, target_pos, history, obstacles, tracked_robot)
     return num_moves
