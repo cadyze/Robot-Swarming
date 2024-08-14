@@ -468,8 +468,8 @@ class SwarmSimulator:
                             show_graph=True, tracked_robot=-1, wait_for_all=False):
         
         if wait_for_all and tracked_robot != -1:
-            print("ERROR: CANNOT TRACK A ROBOT WHILE WAITING FOR ALL TO FINISH.")
-            return
+            raise Exception("ERROR: CANNOT TRACK A ROBOT WHILE WAITING FOR ALL TO FINISH.")
+            
         
 
         def info_to_state(x, y, orientation):
