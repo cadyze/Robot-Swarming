@@ -474,7 +474,10 @@ class SwarmSimulator:
         
         if wait_for_all and tracked_robot != -1:
             raise Exception("ERROR: CANNOT TRACK A ROBOT WHILE WAITING FOR ALL TO FINISH.")
-            
+        
+        if tracked_robot > num_robots:
+            raise Exception("ERROR: TRYING TO TRACK A ROBOT THAT DOESN'T EXIST.")
+
         self.collisions = 0
 
         def info_to_state(x, y, orientation):

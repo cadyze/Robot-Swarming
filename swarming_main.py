@@ -18,7 +18,7 @@ def plot_histogram(data, grid_size):
 # collision_protocol = RobotSwarmingSimulator.COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE
 obstacles = []
 
-def run_simulation(grid_size, num_robots, collision_protocol, tracked_robot=-1, show_graph=False, csv_path="", starting_pos=STARTING_POSITION.FILL):  
+def run_simulation(grid_size, num_robots, collision_protocol, tracked_robot=-1, show_graph=False, starting_pos=STARTING_POSITION.FILL):  
     # Arena: 31x31, 61x61, 81x81
     # Number of Robots: 1, 5, 10, 20 -> 1, 3, 5, 10
     # Protocols: BREAK,  FIND NEXT AVAILABLE
@@ -29,6 +29,19 @@ def run_simulation(grid_size, num_robots, collision_protocol, tracked_robot=-1, 
     # XXXX: Save the raw data of number of iterations and collisions
     # TODO: Add spaces around robots (starting position)
     
+    # Create dynamic .csv path
+    csv_path = "A{}_R{}".format(grid_size, num_robots)
+    if collision_protocol == COLLISION_PROTOCOL.BREAK:
+        csv_path += "_B"
+    elif collision_protocol == COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE:
+        csv_path += "_FN"
+
+    if tracked_robot != -1:
+        csv_path += "_T{}".format(tracked_robot)
+
+    csv_path += "_{}".format(starting_pos.name)
+    csv_path += ".csv"
+
     # Setting up the dataframe for consistent .csv writing
     df = pd.DataFrame({
         'Moves': [],
@@ -44,7 +57,7 @@ def run_simulation(grid_size, num_robots, collision_protocol, tracked_robot=-1, 
     RobotSwarmSimulator = RobotSwarmingSimulator.SwarmSimulator(grid_size, (grid_size // 2, grid_size // 2), obstacles, starting_pos)
     moves, collisions = 0, 0
     while True:
-        moves, collisions = RobotSwarmSimulator.start_robot_swarming(num_robots, collision_protocol, show_graph=True, tracked_robot=tracked_robot)
+        moves, collisions = RobotSwarmSimulator.start_robot_swarming(num_robots, collision_protocol, show_graph=show_graph, tracked_robot=tracked_robot)
 
         # If given a .csv, write the data to it
         if csv_path != "":
@@ -52,5 +65,5 @@ def run_simulation(grid_size, num_robots, collision_protocol, tracked_robot=-1, 
             df.to_csv(csv_path, mode='a', header=False, index=False)
             df = df[0:0]
 
-run_simulation(11, 10, COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE, 
-               csv_path="", tracked_robot=0, starting_pos=STARTING_POSITION.SPACED)
+run_simulation(61, 10, COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE,
+               tracked_robot=9, starting_pos=STARTING_POSITION.EDGE)
