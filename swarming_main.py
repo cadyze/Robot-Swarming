@@ -18,21 +18,28 @@ obstacles = []
 
 def run_simulation(num_robots, collision_protocol, tracked_robot):  
     # Arena: 31x31, 61x61, 81x81
-    # Number of Robots: 1, 5, 10, 20
+    # Number of Robots: 1, 5, 10, 20 -> 1, 3, 5, 10
     # Protocols: BREAK,  FIND NEXT AVAILABLE
     # Tracking Robots: First index, Last index, Middle Robot
+    # TODO: Add robots that allign against the wall
+    # TODO: Graph the number of collision protocols called
+    # TODO: Create the triangle but leave the insides unfilled by robots
+    # TODO: Save the raw data of number of iterations and collisions
+    # TODO: Add spaces around robots (starting position)
+    #
+
     # Create the SwarmingSimulation
     history = []
     RobotSwarmSimulator = RobotSwarmingSimulator.SwarmSimulator(grid_size, (grid_size // 2, grid_size // 2), obstacles)
-    for i in range(10000):
+    for i in range(250):
         # moves.append(swarming_simulator.start_robot_swarming(grid_size, (grid_size // 2, grid_size // 2), 1, collision_protocol, 
         #                                                      show_graph=True))
         history.append(RobotSwarmSimulator.start_robot_swarming(num_robots, collision_protocol, show_graph=False, tracked_robot=tracked_robot))
     return history
 
-moves.append(run_simulation(20, collision_protocol, 0))
-moves.append(run_simulation(20, collision_protocol, 19))
-moves.append(run_simulation(20, collision_protocol, 9))
+# moves.append(run_simulation(10, collision_protocol, 0))
+moves.append(run_simulation(10, collision_protocol, 19))
+# moves.append(run_simulation(10, collision_protocol, 9))x` `
 
 for m_list in moves:
     plot_histogram(m_list, grid_size)
