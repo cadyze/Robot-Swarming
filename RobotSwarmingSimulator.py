@@ -7,14 +7,19 @@ class COLLISION_PROTOCOL(Enum):
     BREAK = 1
     FIND_NEXT_AVAILABLE = 2
 
+class STARTING_POSITION(Enum):
+    FILL = 1
+    SPACED = 2
+    EDGE = 3
 
 class SwarmSimulator:
-    def __init__(self, grid_size, target_pos, obstacles):
+    def __init__(self, grid_size, target_pos, obstacles, starting_pos):
         self.grid_size = grid_size
         self.target_pos = target_pos
         self.collisions = 0
         self.Arena, self.DynamicObstacleArena = self.init_arena(grid_size, target_pos, obstacles)
         self.obstacles = obstacles
+        self.starting_pos = starting_pos
 
     def init_arena(self, grid_size, target_pos, obstacles): 
         # Six different matrices, each representing the probability matrix for each orientation (measured in degrees)
@@ -470,7 +475,7 @@ class SwarmSimulator:
         if wait_for_all and tracked_robot != -1:
             raise Exception("ERROR: CANNOT TRACK A ROBOT WHILE WAITING FOR ALL TO FINISH.")
             
-        collisions = 0
+        self.collisions = 0
 
         def info_to_state(x, y, orientation):
             return 6 * (x + self.grid_size * y) + orientation
@@ -481,9 +486,18 @@ class SwarmSimulator:
         x, y = 0, 1
         layer = 1
         while n_to_instantiate != 0:
-            # Instantiate a new robot
-            curr_states.append(info_to_state(x, y, 0))
-            n_to_instantiate -= 1
+            # Instantiate a new robot depending on the starting position given
+            if self.starting_pos == STARTING_POSITION.EDGE:
+                if x == 0 or y == 0:
+                    curr_states.append(info_to_state(x, y, 0))
+                    n_to_instantiate -= 1
+            elif self.starting_pos == STARTING_POSITION.SPACED:
+                if x % 2 == 0 and y % 2 == 0:
+                    curr_states.append(info_to_state(x, y, 0))
+                    n_to_instantiate -= 1
+            elif self.starting_pos == STARTING_POSITION.FILL:
+                curr_states.append(info_to_state(x, y, 0))
+                n_to_instantiate -= 1
 
             # Update for next coordinates
             if y == 0:
