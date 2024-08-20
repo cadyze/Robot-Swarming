@@ -12,6 +12,7 @@ class SwarmSimulator:
     def __init__(self, grid_size, target_pos, obstacles):
         self.grid_size = grid_size
         self.target_pos = target_pos
+        self.collisions = 0
         self.Arena, self.DynamicObstacleArena = self.init_arena(grid_size, target_pos, obstacles)
         self.obstacles = obstacles
 
@@ -441,18 +442,17 @@ class SwarmSimulator:
         x = state % grid_size
         return x, y, orientation
 
-    # XXXX: Add different dynamic collision protocols, compare the histograms 
-    # XXXX: Add tracking for a desired robot, only stop simulation when specified robot hits target
-    # XXXX: Add wait for all robots to find target 
-    # XXXX: Fix positioning when adding multiple robots (0 should be closest to target init)
     def get_robot_next_move(self, curr_states, robot_ind, probability_matrix, grid_size, current_positions, collision_protocol):
         p = probability_matrix[curr_states[robot_ind]]
         next_state = np.random.choice(len(p), p=p)
         x, y, _ = self.state_to_info(next_state, grid_size)
             
         if (x, y) in current_positions:
-            # If collding with another robot, just return its current state
+            # Run a specified collision protocol
+            self.collisions += 1
+
             if collision_protocol == COLLISION_PROTOCOL.BREAK:
+                # If collding with another robot, just return its current state
                 next_state = curr_states[robot_ind]
                 x, y, _ = self.state_to_info(next_state, grid_size)
             elif collision_protocol == COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE:
@@ -470,7 +470,7 @@ class SwarmSimulator:
         if wait_for_all and tracked_robot != -1:
             raise Exception("ERROR: CANNOT TRACK A ROBOT WHILE WAITING FOR ALL TO FINISH.")
             
-        
+        collisions = 0
 
         def info_to_state(x, y, orientation):
             return 6 * (x + self.grid_size * y) + orientation
@@ -537,4 +537,4 @@ class SwarmSimulator:
 
         if show_graph:
             graph_swarm.graph_arena(self.grid_size, self.target_pos, history, self.obstacles, tracked_robot)
-        return num_moves
+        return num_moves, self.collisions
