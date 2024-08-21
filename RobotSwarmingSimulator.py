@@ -4,7 +4,7 @@ import graph_swarm
 from enum import Enum
 
 class COLLISION_PROTOCOL(Enum):
-    BREAK = 1
+    WAIT_NEXT = 1
     FIND_NEXT_AVAILABLE = 2
 
 class STARTING_POSITION(Enum):
@@ -13,13 +13,17 @@ class STARTING_POSITION(Enum):
     EDGE = 3
 
 class SwarmSimulator:
-    def __init__(self, grid_size, target_pos, obstacles, starting_pos):
+    def __init__(self, grid_size, target_pos, obstacles, starting_pos, sensing_range):
         self.grid_size = grid_size
         self.target_pos = target_pos
         self.collisions = 0
+        self.timesteps = 0
+        self.num_waits = 0
         self.Arena, self.DynamicObstacleArena = self.init_arena(grid_size, target_pos, obstacles)
         self.obstacles = obstacles
         self.starting_pos = starting_pos
+        self.tracked_robot = -1
+        self.sensing_range = sensing_range
 
     def init_arena(self, grid_size, target_pos, obstacles): 
         # Six different matrices, each representing the probability matrix for each orientation (measured in degrees)
@@ -451,15 +455,28 @@ class SwarmSimulator:
         p = probability_matrix[curr_states[robot_ind]]
         next_state = np.random.choice(len(p), p=p)
         x, y, _ = self.state_to_info(next_state, grid_size)
-            
+        
+        '''
+        Should increase value whether it be for tracked collisions or overall collisions, etc.
+        '''
+        def should_inc_val():
+            if self.tracked_robot != -1:
+                if robot_ind == self.tracked_robot:
+                    return True
+            else:
+                return True
+
         if (x, y) in current_positions:
             # Run a specified collision protocol
-            self.collisions += 1
+            if should_inc_val():
+                self.collisions += 1
 
-            if collision_protocol == COLLISION_PROTOCOL.BREAK:
+            if collision_protocol == COLLISION_PROTOCOL.WAIT_NEXT:
                 # If collding with another robot, just return its current state
                 next_state = curr_states[robot_ind]
                 x, y, _ = self.state_to_info(next_state, grid_size)
+                if should_inc_val():
+                    self.num_waits += 1
             elif collision_protocol == COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE:
                 max_iters = 100
                 for _ in range(max_iters):
@@ -467,6 +484,8 @@ class SwarmSimulator:
                     x, y, _ = self.state_to_info(next_state, grid_size)
                     if (x, y) not in current_positions:
                         break
+                if should_inc_val():
+                    self.num_waits += 1
         return next_state, (x, y)
 
     def start_robot_swarming(self, num_robots, collision_protocol, 
@@ -477,8 +496,10 @@ class SwarmSimulator:
         
         if tracked_robot > num_robots:
             raise Exception("ERROR: TRYING TO TRACK A ROBOT THAT DOESN'T EXIST.")
-
+        
+        self.tracked_robot = tracked_robot
         self.collisions = 0
+        self.num_waits = 0
 
         def info_to_state(x, y, orientation):
             return 6 * (x + self.grid_size * y) + orientation
@@ -520,7 +541,7 @@ class SwarmSimulator:
         current_positions = [(0, 0) for _ in range(num_robots)]
         robots_finished = [False for _ in range(num_robots)]
 
-        num_moves = 0
+        self.timesteps = 0
         while not is_target_found:
             for robot_ind in range(num_robots):
                 x, y, _ = self.state_to_info(curr_states[robot_ind], self.grid_size)
@@ -550,8 +571,9 @@ class SwarmSimulator:
             # Check goals for wait for all
             if wait_for_all and all(robots_finished):
                 is_target_found = True
-            num_moves += 1
+            
+            self.timesteps += 1
 
         if show_graph:
-            graph_swarm.graph_arena(self.grid_size, self.target_pos, history, self.obstacles, tracked_robot)
-        return num_moves, self.collisions
+            graph_swarm.graph_arena(self.grid_size, self.target_pos, history, self.obstacles, self.tracked_robot)
+        return self.timesteps, self.collisions, self.num_waits

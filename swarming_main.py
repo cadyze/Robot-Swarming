@@ -29,10 +29,13 @@ def run_simulation(grid_size, num_robots, collision_protocol, tracked_robot=-1, 
     # XXXX: Save the raw data of number of iterations and collisions
     # TODO: Add spaces around robots (starting position)
     
+    if tracked_robot > num_robots:
+        raise Exception("ERROR: TRYING TO TRACK A ROBOT THAT DOESN'T EXIST.")
+    
     # Create dynamic .csv path
     csv_path = "A{}_R{}".format(grid_size, num_robots)
-    if collision_protocol == COLLISION_PROTOCOL.BREAK:
-        csv_path += "_B"
+    if collision_protocol == COLLISION_PROTOCOL.WAIT_NEXT:
+        csv_path += "_WN"
     elif collision_protocol == COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE:
         csv_path += "_FN"
 
@@ -44,8 +47,9 @@ def run_simulation(grid_size, num_robots, collision_protocol, tracked_robot=-1, 
 
     # Setting up the dataframe for consistent .csv writing
     df = pd.DataFrame({
-        'Moves': [],
-        'Collisions': []
+        'Timesteps': [],
+        'Collisions': [],
+        'Steps Waited': []
     })
 
     # Creates a new .csv if it doesn't exist
@@ -56,14 +60,25 @@ def run_simulation(grid_size, num_robots, collision_protocol, tracked_robot=-1, 
     # Create the SwarmingSimulation
     RobotSwarmSimulator = RobotSwarmingSimulator.SwarmSimulator(grid_size, (grid_size // 2, grid_size // 2), obstacles, starting_pos)
     moves, collisions = 0, 0
-    while True:
-        moves, collisions = RobotSwarmSimulator.start_robot_swarming(num_robots, collision_protocol, show_graph=show_graph, tracked_robot=tracked_robot)
+    for _ in range(1000):
+        moves, collisions, steps_waited = RobotSwarmSimulator.start_robot_swarming(num_robots, collision_protocol, show_graph=show_graph, tracked_robot=tracked_robot)
 
         # If given a .csv, write the data to it
         if csv_path != "":
-            df.loc[len(df)] = [moves, collisions]
+            df.loc[len(df)] = [moves, collisions, steps_waited]
             df.to_csv(csv_path, mode='a', header=False, index=False)
             df = df[0:0]
 
-run_simulation(61, 10, COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE,
-               tracked_robot=9, starting_pos=STARTING_POSITION.EDGE)
+run_simulation(30, 1, COLLISION_PROTOCOL.WAIT_NEXT, starting_pos=STARTING_POSITION.FILL)
+# run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
+#                tracked_robot=9, starting_pos=STARTING_POSITION.FILL)
+# run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
+#                tracked_robot=9, starting_pos=STARTING_POSITION.SPACED)
+# run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
+#                tracked_robot=9, starting_pos=STARTING_POSITION.EDGE)
+# run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
+#                tracked_robot=0, starting_pos=STARTING_POSITION.FILL)
+# run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
+#                tracked_robot=0, starting_pos=STARTING_POSITION.SPACED)
+# run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
+#                tracked_robot=0, starting_pos=STARTING_POSITION.EDGE)
