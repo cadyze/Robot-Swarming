@@ -19,11 +19,11 @@ class SwarmSimulator:
         self.collisions = 0
         self.timesteps = 0
         self.num_waits = 0
+        self.sensing_range = sensing_range
         self.Arena, self.DynamicObstacleArena = self.init_arena(grid_size, target_pos, obstacles)
         self.obstacles = obstacles
         self.starting_pos = starting_pos
         self.tracked_robot = -1
-        self.sensing_range = sensing_range
 
     def init_arena(self, grid_size, target_pos, obstacles): 
         # Six different matrices, each representing the probability matrix for each orientation (measured in degrees)
@@ -377,6 +377,8 @@ class SwarmSimulator:
         DyanmicObstacleArena = Arena.copy()
         # Modifying for hops to target, this assumes that the target has a one hop border
         x, y = target_pos
+        # coords_to_modify = [(x, y)]
+
         for orientation in range(6):
             Arena[info_to_state(x+1, y, orientation)] = 0
             Arena[info_to_state(x+1, y, orientation)][info_to_state(x, y, orientation)] = 1
@@ -395,6 +397,101 @@ class SwarmSimulator:
 
             Arena[info_to_state(x, y-1, orientation)] = 0
             Arena[info_to_state(x, y-1, orientation)][info_to_state(x, y, orientation)] = 1
+            
+            if self.sensing_range >= 2:
+                Arena[info_to_state(x-2, y, orientation)] = 0
+                Arena[info_to_state(x-2, y, orientation)][info_to_state(x-1, y, orientation)] = 1
+                
+                Arena[info_to_state(x-1, y-1, orientation)] = 0
+                Arena[info_to_state(x-1, y-1, orientation)][info_to_state(x-1, y, orientation)] = 1
+
+                Arena[info_to_state(x-2, y+1, orientation)] = 0
+                Arena[info_to_state(x-2, y+1, orientation)][info_to_state(x-1, y, orientation)] = 1
+                
+                Arena[info_to_state(x-2, y+2, orientation)] = 0
+                Arena[info_to_state(x-2, y+2, orientation)][info_to_state(x-1, y+1, orientation)] = 1
+                
+                Arena[info_to_state(x-1, y+2, orientation)] = 0
+                Arena[info_to_state(x-1, y+2, orientation)][info_to_state(x-1, y+1, orientation)] = 1
+                
+                Arena[info_to_state(x, y+2, orientation)] = 0
+                Arena[info_to_state(x, y+2, orientation)][info_to_state(x, y+1, orientation)] = 1
+                
+                Arena[info_to_state(x+1, y+1, orientation)] = 0
+                Arena[info_to_state(x+1, y+1, orientation)][info_to_state(x, y+1, orientation)] = 1
+                
+                #TODO: Add connections
+                Arena[info_to_state(x+2, y, orientation)] = 0
+                Arena[info_to_state(x+2, y, orientation)][info_to_state(x+1, y, orientation)] = 1
+                
+                Arena[info_to_state(x+2, y-1, orientation)] = 0
+                Arena[info_to_state(x+2, y-1, orientation)][info_to_state(x, y+1, orientation)] = 1
+                
+                Arena[info_to_state(x+2, y-2, orientation)] = 0
+                Arena[info_to_state(x+2, y-2, orientation)][info_to_state(x, y+1, orientation)] = 1
+                
+                Arena[info_to_state(x+1, y-2, orientation)] = 0
+                Arena[info_to_state(x+1, y-2, orientation)][info_to_state(x, y+1, orientation)] = 1
+                
+                Arena[info_to_state(x, y-2, orientation)] = 0
+                Arena[info_to_state(x, y-2, orientation)][info_to_state(x, y+1, orientation)] = 1
+            
+            if self.sensing_range >= 3:
+                Arena[info_to_state(x, y+3, orientation)] = 0
+                Arena[info_to_state(x, y+3, orientation)][info_to_state(x, y+2, orientation)] = 1
+                
+                Arena[info_to_state(x+1, y+2, orientation)] = 0
+                Arena[info_to_state(x+1, y+2, orientation)][info_to_state(x-1, y+2, orientation)] = 1
+                
+                Arena[info_to_state(x+2, y+1, orientation)] = 0
+                Arena[info_to_state(x+2, y+1, orientation)][info_to_state(x+1, y+1, orientation)] = 1
+                
+                Arena[info_to_state(x+3, y, orientation)] = 0
+                Arena[info_to_state(x+3, y, orientation)][info_to_state(x+2, y, orientation)] = 1
+                
+                Arena[info_to_state(x+3, y-1, orientation)] = 0
+                Arena[info_to_state(x+3, y-1, orientation)][info_to_state(x+2, y-1, orientation)] = 1
+                
+                Arena[info_to_state(x+3, y-2, orientation)] = 0
+                Arena[info_to_state(x+3, y-2, orientation)][info_to_state(x+2, y-2, orientation)] = 1
+                
+                Arena[info_to_state(x+3, y-3, orientation)] = 0
+                Arena[info_to_state(x+3, y-3, orientation)][info_to_state(x+2, y-2, orientation)] = 1
+                
+                Arena[info_to_state(x+2, y-3, orientation)] = 0
+                Arena[info_to_state(x+2, y-3, orientation)][info_to_state(x+2, y-2, orientation)] = 1
+                
+                Arena[info_to_state(x+1, y-3, orientation)] = 0
+                Arena[info_to_state(x+1, y-3, orientation)][info_to_state(x+1, y-2, orientation)] = 1
+                
+                Arena[info_to_state(x, y-3, orientation)] = 0
+                Arena[info_to_state(x, y-3, orientation)][info_to_state(x+1, y-2, orientation)] = 1
+                
+                Arena[info_to_state(x-1, y-2, orientation)] = 0
+                Arena[info_to_state(x-1, y-2, orientation)][info_to_state(x, y-2, orientation)] = 1
+                
+                Arena[info_to_state(x-2, y-1, orientation)] = 0
+                Arena[info_to_state(x-2, y-1, orientation)][info_to_state(x-1, y-1, orientation)] = 1
+                
+                Arena[info_to_state(x-3, y, orientation)] = 0
+                Arena[info_to_state(x-3, y, orientation)][info_to_state(x-2, y, orientation)] = 1
+                
+                Arena[info_to_state(x-3, y+1, orientation)] = 0
+                Arena[info_to_state(x-3, y+1, orientation)][info_to_state(x-2, y+1, orientation)] = 1
+                
+                Arena[info_to_state(x-3, y+2, orientation)] = 0
+                Arena[info_to_state(x-3, y+2, orientation)][info_to_state(x-2, y+2, orientation)] = 1
+                
+                Arena[info_to_state(x-3, y+3, orientation)] = 0
+                Arena[info_to_state(x-3, y+3, orientation)][info_to_state(x-2, y+2, orientation)] = 1
+                
+                Arena[info_to_state(x-2, y+3, orientation)] = 0
+                Arena[info_to_state(x-2, y+3, orientation)][info_to_state(x-2, y+2, orientation)] = 1
+                
+                Arena[info_to_state(x-1, y+3, orientation)] = 0
+                Arena[info_to_state(x-1, y+3, orientation)][info_to_state(x-1, y+2, orientation)] = 1
+
+                
 
 
         '''

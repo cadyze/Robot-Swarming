@@ -18,7 +18,7 @@ def plot_histogram(data, grid_size):
 # collision_protocol = RobotSwarmingSimulator.COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE
 obstacles = []
 
-def run_simulation(grid_size, num_robots, collision_protocol, tracked_robot=-1, show_graph=False, starting_pos=STARTING_POSITION.FILL):  
+def run_simulation(grid_size, num_robots, collision_protocol, tracked_robot=-1, show_graph=False, starting_pos=STARTING_POSITION.FILL, sensing_range=1):  
     # Arena: 31x31, 61x61, 81x81
     # Number of Robots: 1, 5, 10, 20 -> 1, 3, 5, 10
     # Protocols: BREAK,  FIND NEXT AVAILABLE
@@ -58,7 +58,8 @@ def run_simulation(grid_size, num_robots, collision_protocol, tracked_robot=-1, 
         print(f"Created new CSV file at {csv_path}.")
 
     # Create the SwarmingSimulation
-    RobotSwarmSimulator = RobotSwarmingSimulator.SwarmSimulator(grid_size, (grid_size // 2, grid_size // 2), obstacles, starting_pos)
+    RobotSwarmSimulator = RobotSwarmingSimulator.SwarmSimulator(grid_size, (grid_size // 2, grid_size // 2), obstacles, 
+                                                                starting_pos, sensing_range=sensing_range)
     moves, collisions = 0, 0
     for _ in range(1000):
         moves, collisions, steps_waited = RobotSwarmSimulator.start_robot_swarming(num_robots, collision_protocol, show_graph=show_graph, tracked_robot=tracked_robot)
@@ -69,7 +70,7 @@ def run_simulation(grid_size, num_robots, collision_protocol, tracked_robot=-1, 
             df.to_csv(csv_path, mode='a', header=False, index=False)
             df = df[0:0]
 
-run_simulation(30, 1, COLLISION_PROTOCOL.WAIT_NEXT, starting_pos=STARTING_POSITION.FILL)
+run_simulation(30, 1, COLLISION_PROTOCOL.WAIT_NEXT, starting_pos=STARTING_POSITION.FILL, sensing_range=3)
 # run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
 #                tracked_robot=9, starting_pos=STARTING_POSITION.FILL)
 # run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
