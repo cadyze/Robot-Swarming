@@ -70,16 +70,29 @@ def run_simulation(grid_size, num_robots, collision_protocol, tracked_robot=-1, 
             df.to_csv(csv_path, mode='a', header=False, index=False)
             df = df[0:0]
 
-run_simulation(30, 1, COLLISION_PROTOCOL.WAIT_NEXT, starting_pos=STARTING_POSITION.FILL, sensing_range=3)
-# run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
-#                tracked_robot=9, starting_pos=STARTING_POSITION.FILL)
-# run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
-#                tracked_robot=9, starting_pos=STARTING_POSITION.SPACED)
-# run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
-#                tracked_robot=9, starting_pos=STARTING_POSITION.EDGE)
-# run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
-#                tracked_robot=0, starting_pos=STARTING_POSITION.FILL)
-# run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
-#                tracked_robot=0, starting_pos=STARTING_POSITION.SPACED)
-# run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
-#                tracked_robot=0, starting_pos=STARTING_POSITION.EDGE)
+# run_simulation(30, 1, COLLISION_PROTOCOL.WAIT_NEXT, starting_pos=STARTING_POSITION.FILL, sensing_range=3)
+run_simulation(61, 10, COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE,
+               tracked_robot=0, starting_pos=STARTING_POSITION.FILL)
+run_simulation(61, 10, COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE,
+               tracked_robot=9, starting_pos=STARTING_POSITION.FILL)
+run_simulation(61, 10, COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE,
+               tracked_robot=9, starting_pos=STARTING_POSITION.SPACED)
+run_simulation(61, 10, COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE,
+               tracked_robot=9, starting_pos=STARTING_POSITION.EDGE)
+run_simulation(61, 10, COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE,
+               tracked_robot=0, starting_pos=STARTING_POSITION.SPACED)
+run_simulation(61, 10, COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE,
+               tracked_robot=0, starting_pos=STARTING_POSITION.EDGE)
+
+run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
+               tracked_robot=9, starting_pos=STARTING_POSITION.FILL)
+run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
+               tracked_robot=9, starting_pos=STARTING_POSITION.SPACED)
+run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
+               tracked_robot=9, starting_pos=STARTING_POSITION.EDGE)
+run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
+               tracked_robot=0, starting_pos=STARTING_POSITION.FILL)
+run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
+               tracked_robot=0, starting_pos=STARTING_POSITION.SPACED)
+run_simulation(61, 10, COLLISION_PROTOCOL.WAIT_NEXT,
+               tracked_robot=0, starting_pos=STARTING_POSITION.EDGE)

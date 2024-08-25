@@ -560,6 +560,7 @@ class SwarmSimulator:
             if self.tracked_robot != -1:
                 if robot_ind == self.tracked_robot:
                     return True
+                return False
             else:
                 return True
 
@@ -576,12 +577,16 @@ class SwarmSimulator:
                     self.num_waits += 1
             elif collision_protocol == COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE:
                 max_iters = 100
+                found_next = False
                 for _ in range(max_iters):
                     next_state = np.random.choice(len(p), p=p)
                     x, y, _ = self.state_to_info(next_state, grid_size)
                     if (x, y) not in current_positions:
+                        found_next = True
                         break
-                if should_inc_val():
+
+                # After all test iterations, then just wait
+                if should_inc_val() and not found_next:
                     self.num_waits += 1
         return next_state, (x, y)
 

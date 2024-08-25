@@ -96,6 +96,6 @@ def compute_mean_std(file_path):
     
     return np.mean(m_values), np.std(m_values)
 
-
+graph_all()
 mean, std = compute_mean_std("A30_R1_WN_FILL.csv")
 print("MEAN: {} | STD_DEV: {}".format(mean, std))
