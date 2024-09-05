@@ -13,27 +13,30 @@ class STARTING_POSITION(Enum):
     EDGE = 3
 
 class SwarmSimulator:
-    def __init__(self, grid_size, target_pos, obstacles, starting_pos, sensing_range):
+    def __init__(self, grid_size, target_pos, obstacles, starting_pos, sensing_range, laziness_prob):
         self.grid_size = grid_size
         self.target_pos = target_pos
         self.collisions = 0
         self.timesteps = 0
         self.num_waits = 0
         self.sensing_range = sensing_range
+        self.laziness_prob = laziness_prob  
         self.Arena, self.DynamicObstacleArena = self.init_arena(grid_size, target_pos, obstacles)
         self.obstacles = obstacles
         self.starting_pos = starting_pos
         self.tracked_robot = -1
 
-    def init_arena(self, grid_size, target_pos, obstacles): 
-        # Six different matrices, each representing the probability matrix for each orientation (measured in degrees)
-        I_ACTIONS = {'FORWARD': 0.49, 'BACKWARD': 0.01, 'SMALL_TURN': 0.24, 'BIG_TURN': 0.01}	# I: Inside
-        CW_ACTIONS = {'REFLECT': 0.6, 'BACKWARD': 0.15, 'SMALL_TURN': 0.15, 'BIG_TURN': 0.1}	# CW: Collide against the wall
-        PW_ACTIONS = {'FORWARD': 0.45, 'BACKWARD': 0.04, 'SMALL_TURN': 0.45, 'BIG_TURN': 0.06}	# PW: Parallel with the wall
-        ASC_ACTIONS = {'BACKWARD': 0.5, 'BIG_TURN': 0.5}										# ASC: Along the sharp corner
-        AOC_ACTIONS = {'BACKWARD': 0.25, 'SMALL_TURN': 0.25, 'BIG_TURN': 0.5}					# AOC: Along the obtuse corner
-        COC_ACTIONS = {'BACKWARD': 0.34, 'BIG_TURN': 0.33}										# COC: Collide toward the obtuse corner
 
+    def init_arena(self, grid_size, target_pos, obstacles): 
+        nl_sc = 1 - self.laziness_prob
+        # Six different matrices, each representing the probability matrix for each orientation (measured in degrees)
+        I_ACTIONS = {'FORWARD': 0.49 * nl_sc, 'BACKWARD': 0.01 * nl_sc, 'SMALL_TURN': 0.24 * nl_sc, 'BIG_TURN': 0.01 * nl_sc}	# I: Inside
+        CW_ACTIONS = {'REFLECT': 0.6 * nl_sc, 'BACKWARD': 0.15 * nl_sc, 'SMALL_TURN': 0.15 * nl_sc, 'BIG_TURN': 0.1 * nl_sc}	# CW: Collide against the wall
+        PW_ACTIONS = {'FORWARD': 0.45 * nl_sc, 'BACKWARD': 0.04 * nl_sc, 'SMALL_TURN': 0.45 * nl_sc, 'BIG_TURN': 0.06 * nl_sc}	# PW: Parallel with the wall
+        ASC_ACTIONS = {'BACKWARD': 0.5 * nl_sc, 'BIG_TURN': 0.5 * nl_sc}										                # ASC: Along the sharp corner
+        AOC_ACTIONS = {'BACKWARD': 0.25 * nl_sc, 'SMALL_TURN': 0.25 * nl_sc, 'BIG_TURN': 0.5 * nl_sc}					        # AOC: Along the obtuse corner
+        COC_ACTIONS = {'BACKWARD': 0.34 * nl_sc, 'BIG_TURN': 0.33 * nl_sc}										                # COC: Collide toward the obtuse corner
+        
         '''
         For the following, this is how the arena is set up:
         It is a 2D transitional matrix that hops from state to state
@@ -65,6 +68,7 @@ class SwarmSimulator:
         # Modifying the insides
         for x in range(1, grid_size - 1):
             for y in range(1, grid_size - 1):
+
                 # Modifying the orientation for 0 degrees
                 Arena[info_to_state(x, y, ORIENTATIONS['0'])][info_to_state(x+1, y, ORIENTATIONS['0'])] = I_ACTIONS['FORWARD']
                 Arena[info_to_state(x, y, ORIENTATIONS['0'])][info_to_state(x, y+1, ORIENTATIONS['60'])] = I_ACTIONS['SMALL_TURN']
@@ -72,6 +76,8 @@ class SwarmSimulator:
                 Arena[info_to_state(x, y, ORIENTATIONS['0'])][info_to_state(x-1, y, ORIENTATIONS['180'])] = I_ACTIONS['BACKWARD']
                 Arena[info_to_state(x, y, ORIENTATIONS['0'])][info_to_state(x, y-1, ORIENTATIONS['240'])] = I_ACTIONS['BIG_TURN']
                 Arena[info_to_state(x, y, ORIENTATIONS['0'])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = I_ACTIONS['SMALL_TURN']
+                Arena[info_to_state(x, y, ORIENTATIONS['0'])][info_to_state(x, y, ORIENTATIONS['0'])] = self.laziness_prob
+                
 
                 # 60 Degrees
                 Arena[info_to_state(x, y, ORIENTATIONS['60'])][info_to_state(x+1, y, ORIENTATIONS['0'])] = I_ACTIONS['SMALL_TURN']
@@ -80,6 +86,7 @@ class SwarmSimulator:
                 Arena[info_to_state(x, y, ORIENTATIONS['60'])][info_to_state(x-1, y, ORIENTATIONS['180'])] = I_ACTIONS['BIG_TURN']
                 Arena[info_to_state(x, y, ORIENTATIONS['60'])][info_to_state(x, y-1, ORIENTATIONS['240'])] = I_ACTIONS['BACKWARD']
                 Arena[info_to_state(x, y, ORIENTATIONS['60'])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = I_ACTIONS['BIG_TURN']
+                Arena[info_to_state(x, y, ORIENTATIONS['60'])][info_to_state(x, y, ORIENTATIONS['60'])] = self.laziness_prob
 
                 # 120 Degrees
                 Arena[info_to_state(x, y, ORIENTATIONS['120'])][info_to_state(x+1, y, ORIENTATIONS['0'])] = I_ACTIONS['BIG_TURN']
@@ -88,6 +95,7 @@ class SwarmSimulator:
                 Arena[info_to_state(x, y, ORIENTATIONS['120'])][info_to_state(x-1, y, ORIENTATIONS['180'])] = I_ACTIONS['SMALL_TURN']
                 Arena[info_to_state(x, y, ORIENTATIONS['120'])][info_to_state(x, y-1, ORIENTATIONS['240'])] = I_ACTIONS['BIG_TURN']
                 Arena[info_to_state(x, y, ORIENTATIONS['120'])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = I_ACTIONS['BACKWARD']
+                Arena[info_to_state(x, y, ORIENTATIONS['120'])][info_to_state(x, y, ORIENTATIONS['120'])] = self.laziness_prob
 
                 # 180 Degrees
                 Arena[info_to_state(x, y, ORIENTATIONS['180'])][info_to_state(x+1, y, ORIENTATIONS['0'])] = I_ACTIONS['BACKWARD']
@@ -96,6 +104,7 @@ class SwarmSimulator:
                 Arena[info_to_state(x, y, ORIENTATIONS['180'])][info_to_state(x-1, y, ORIENTATIONS['180'])] = I_ACTIONS['FORWARD']
                 Arena[info_to_state(x, y, ORIENTATIONS['180'])][info_to_state(x, y-1, ORIENTATIONS['240'])] = I_ACTIONS['SMALL_TURN']
                 Arena[info_to_state(x, y, ORIENTATIONS['180'])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = I_ACTIONS['BIG_TURN']
+                Arena[info_to_state(x, y, ORIENTATIONS['180'])][info_to_state(x, y, ORIENTATIONS['180'])] = self.laziness_prob
 
                 # 240 Degrees
                 Arena[info_to_state(x, y, ORIENTATIONS['240'])][info_to_state(x+1, y, ORIENTATIONS['0'])] = I_ACTIONS['BIG_TURN']
@@ -104,6 +113,7 @@ class SwarmSimulator:
                 Arena[info_to_state(x, y, ORIENTATIONS['240'])][info_to_state(x-1, y, ORIENTATIONS['180'])] = I_ACTIONS['SMALL_TURN']
                 Arena[info_to_state(x, y, ORIENTATIONS['240'])][info_to_state(x, y-1, ORIENTATIONS['240'])] = I_ACTIONS['FORWARD']
                 Arena[info_to_state(x, y, ORIENTATIONS['240'])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = I_ACTIONS['SMALL_TURN']
+                Arena[info_to_state(x, y, ORIENTATIONS['240'])][info_to_state(x, y, ORIENTATIONS['240'])] = self.laziness_prob
 
                 # 300 Degrees
                 Arena[info_to_state(x, y, ORIENTATIONS['300'])][info_to_state(x+1, y, ORIENTATIONS['0'])] = I_ACTIONS['SMALL_TURN']
@@ -112,6 +122,7 @@ class SwarmSimulator:
                 Arena[info_to_state(x, y, ORIENTATIONS['300'])][info_to_state(x-1, y, ORIENTATIONS['180'])] = I_ACTIONS['BIG_TURN']
                 Arena[info_to_state(x, y, ORIENTATIONS['300'])][info_to_state(x, y-1, ORIENTATIONS['240'])] = I_ACTIONS['SMALL_TURN']
                 Arena[info_to_state(x, y, ORIENTATIONS['300'])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = I_ACTIONS['FORWARD']
+                Arena[info_to_state(x, y, ORIENTATIONS['300'])][info_to_state(x, y, ORIENTATIONS['300'])] = self.laziness_prob
 
         # Mofifying the top edge of grid
         Y_LEVEL = grid_size - 1
@@ -126,6 +137,7 @@ class SwarmSimulator:
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = PW_ACTIONS['BACKWARD']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = PW_ACTIONS['BIG_TURN']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = PW_ACTIONS['SMALL_TURN']
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
             
             # 60 Degrees
             curr_orientation = '60'
@@ -135,6 +147,7 @@ class SwarmSimulator:
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = CW_ACTIONS['BIG_TURN']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = CW_ACTIONS['BACKWARD']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = CW_ACTIONS['REFLECT']
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
 
             curr_orientation = '120'
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = CW_ACTIONS['BIG_TURN']
@@ -143,6 +156,7 @@ class SwarmSimulator:
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = CW_ACTIONS['SMALL_TURN']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = CW_ACTIONS['REFLECT']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = CW_ACTIONS['BACKWARD']
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
 
             curr_orientation = '180'
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = PW_ACTIONS['BACKWARD']
@@ -151,6 +165,7 @@ class SwarmSimulator:
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = PW_ACTIONS['FORWARD']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = PW_ACTIONS['SMALL_TURN']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = PW_ACTIONS['BIG_TURN']
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
 
             # TODO: Even though not possible for orientations 240 and 300, analyze for possible drone starting points
 
@@ -166,6 +181,7 @@ class SwarmSimulator:
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = PW_ACTIONS['BACKWARD']
             # Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = 
             # Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] =
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
             
             curr_orientation = '180'
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = PW_ACTIONS['BACKWARD']
@@ -174,6 +190,7 @@ class SwarmSimulator:
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = PW_ACTIONS['FORWARD']
             # Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] =
             # Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] =
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
             
             curr_orientation = '240'
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = CW_ACTIONS['BIG_TURN']
@@ -182,6 +199,7 @@ class SwarmSimulator:
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = CW_ACTIONS['SMALL_TURN']
             # Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] =
             # Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] =
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
             
             curr_orientation = '300'
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = CW_ACTIONS['SMALL_TURN']
@@ -190,6 +208,7 @@ class SwarmSimulator:
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = CW_ACTIONS['BIG_TURN']
             # Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] =
             # Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] =
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
 
         # Modifying the left edge of the grid
         X_LEVEL = 0
@@ -203,6 +222,7 @@ class SwarmSimulator:
             # Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = PW_ACTIONS
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = 0.2
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = 0.2
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
 
             curr_orientation = '60'
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = PW_ACTIONS['SMALL_TURN']
@@ -211,6 +231,7 @@ class SwarmSimulator:
             # Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = PW_ACTIONS
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = PW_ACTIONS['BACKWARD']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = PW_ACTIONS['BIG_TURN']
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
 
             curr_orientation = '120'
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = CW_ACTIONS['REFLECT']
@@ -219,6 +240,7 @@ class SwarmSimulator:
             # Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] =
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = CW_ACTIONS['BIG_TURN']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = CW_ACTIONS['BACKWARD']
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
 
             curr_orientation = '180'
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = CW_ACTIONS['BACKWARD']
@@ -227,6 +249,7 @@ class SwarmSimulator:
             # Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] =
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = CW_ACTIONS['SMALL_TURN']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = CW_ACTIONS['REFLECT']
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
             
             curr_orientation = '240'
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = PW_ACTIONS['BIG_TURN']
@@ -235,6 +258,7 @@ class SwarmSimulator:
             # Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] =
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = PW_ACTIONS['FORWARD']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = PW_ACTIONS['SMALL_TURN']
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
             
         # Modifying the RIGHT edge of the grid
         X_LEVEL = grid_size - 1
@@ -247,24 +271,28 @@ class SwarmSimulator:
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y+1, ORIENTATIONS['120'])] = CW_ACTIONS['REFLECT']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = CW_ACTIONS['BACKWARD']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = CW_ACTIONS['BIG_TURN']
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
 
             curr_orientation = '60'
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y+1, ORIENTATIONS['60'])] = PW_ACTIONS['FORWARD']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y+1, ORIENTATIONS['120'])] = PW_ACTIONS['SMALL_TURN']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = PW_ACTIONS['BIG_TURN']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = PW_ACTIONS['BACKWARD']
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
             
             curr_orientation = '240'
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y+1, ORIENTATIONS['60'])] = PW_ACTIONS['BACKWARD']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y+1, ORIENTATIONS['120'])] = PW_ACTIONS['BIG_TURN']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = PW_ACTIONS['SMALL_TURN']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = PW_ACTIONS['FORWARD']
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
             
             curr_orientation = '300'
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y+1, ORIENTATIONS['60'])] = CW_ACTIONS['BIG_TURN']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y+1, ORIENTATIONS['120'])] = CW_ACTIONS['BACKWARD']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = CW_ACTIONS['REFLECT']
             Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = CW_ACTIONS['SMALL_TURN']
+            Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
         
         # Top left corner
         x = 0
@@ -279,16 +307,19 @@ class SwarmSimulator:
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = AOC_ACTIONS['SMALL_TURN']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = AOC_ACTIONS['BACKWARD']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = AOC_ACTIONS['BIG_TURN']
+        Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
         
         curr_orientation = '120'
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = COC_ACTIONS['BIG_TURN']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = COC_ACTIONS['BIG_TURN']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = COC_ACTIONS['BACKWARD']
+        Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob    
         
         curr_orientation = '180'
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = AOC_ACTIONS['BACKWARD']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = AOC_ACTIONS['SMALL_TURN']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y-1, ORIENTATIONS['300'])] = AOC_ACTIONS['BIG_TURN']
+        Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
         
         curr_orientation = '240'
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = 0.25
@@ -308,10 +339,12 @@ class SwarmSimulator:
         curr_orientation = '0'
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = ASC_ACTIONS['BACKWARD']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = ASC_ACTIONS['BIG_TURN']
+        Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
         
         curr_orientation = '60'
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = ASC_ACTIONS['BIG_TURN']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y-1, ORIENTATIONS['240'])] = ASC_ACTIONS['BACKWARD']
+        Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
 
         # BOTTOM RIGHT CORNER
         x = grid_size - 1
@@ -320,6 +353,7 @@ class SwarmSimulator:
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y+1, ORIENTATIONS['60'])] = AOC_ACTIONS['SMALL_TURN']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y+1, ORIENTATIONS['120'])] = AOC_ACTIONS['BIG_TURN']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = AOC_ACTIONS['BACKWARD']
+        Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
         
         curr_orientation = '60'
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y+1, ORIENTATIONS['60'])] = 0.5
@@ -340,11 +374,13 @@ class SwarmSimulator:
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y+1, ORIENTATIONS['60'])] = AOC_ACTIONS['BACKWARD']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y+1, ORIENTATIONS['120'])] = AOC_ACTIONS['BIG_TURN']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = AOC_ACTIONS['SMALL_TURN']
+        Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
         
         curr_orientation = '300'
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y+1, ORIENTATIONS['60'])] = COC_ACTIONS['BIG_TURN']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y+1, ORIENTATIONS['120'])] = COC_ACTIONS['BACKWARD']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x-1, y, ORIENTATIONS['180'])] = COC_ACTIONS['BIG_TURN']
+        Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
 
         # Bottom left corner
         x = 0
@@ -365,14 +401,17 @@ class SwarmSimulator:
         curr_orientation = '180'
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = ASC_ACTIONS['BACKWARD']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y+1, ORIENTATIONS['60'])] = ASC_ACTIONS['BIG_TURN']
+        Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
                                                                                                                             
         curr_orientation = '240'
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = ASC_ACTIONS['BIG_TURN']
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y+1, ORIENTATIONS['60'])] = ASC_ACTIONS['BACKWARD']
+        Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
 
         curr_orientation = '300'
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x+1, y, ORIENTATIONS['0'])] = 0.5
         Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y+1, ORIENTATIONS['60'])] = 0.5
+        Arena[info_to_state(x, y, ORIENTATIONS[curr_orientation])][info_to_state(x, y, ORIENTATIONS[curr_orientation])] = self.laziness_prob
 
         DyanmicObstacleArena = Arena.copy()
         # Modifying for hops to target, this assumes that the target has a one hop border
@@ -607,7 +646,7 @@ class SwarmSimulator:
             return 6 * (x + self.grid_size * y) + orientation
         
         # Instantiate the lower left corner with number of drones starting at 0, 0
-        curr_states = [info_to_state(0, 0, 0)]
+        curr_states = [info_to_state(3, 0, 0)]
         n_to_instantiate = num_robots - 1
         x, y = 0, 1
         layer = 1
