@@ -1,5 +1,7 @@
 import numpy as np
 import graph_swarm
+from scipy.sparse import csc_matrix, eye
+from scipy.sparse.linalg import gmres
 
 from enum import Enum
 
@@ -13,7 +15,7 @@ class STARTING_POSITION(Enum):
     EDGE = 3
 
 class SwarmSimulator:
-    def __init__(self, grid_size, target_pos, obstacles, starting_pos, sensing_range, laziness_prob):
+    def __init__(self, grid_size, target_pos, obstacles, starting_pos, sensing_range, laziness_prob, for_math):
         self.grid_size = grid_size
         self.target_pos = target_pos
         self.collisions = 0
@@ -21,6 +23,7 @@ class SwarmSimulator:
         self.num_waits = 0
         self.sensing_range = sensing_range
         self.laziness_prob = laziness_prob  
+        self.for_math = for_math
         self.Arena, self.DynamicObstacleArena = self.init_arena(grid_size, target_pos, obstacles)
         self.obstacles = obstacles
         self.starting_pos = starting_pos
@@ -51,7 +54,11 @@ class SwarmSimulator:
             0 = 5 = 300 degrees
         '''
         arena_size = 6 * grid_size**2
+        if self.for_math:
+            arena_size += 1
+
         Arena = np.zeros((arena_size, arena_size))
+
         
         def info_to_state(x, y, orientation):
             return 6 * (x + grid_size * y) + orientation
@@ -530,9 +537,10 @@ class SwarmSimulator:
                 Arena[info_to_state(x-1, y+3, orientation)] = 0
                 Arena[info_to_state(x-1, y+3, orientation)][info_to_state(x-1, y+2, orientation)] = 1
 
-                
-
-
+            # For the bucket in the sky implementation, add another jump
+            if self.for_math:
+                Arena[info_to_state(x, y, orientation)] = 0
+                Arena[info_to_state(x, y, orientation)][arena_size - 1] = 1
         '''
         Adding obstacles, will modify how the arena works
         Obstacles is a variable that is of [[(int, int)]] containing tuples that represent the nodes that have the nodes on them.
@@ -718,3 +726,74 @@ class SwarmSimulator:
         if show_graph:
             graph_swarm.graph_arena(self.grid_size, self.target_pos, history, self.obstacles, self.tracked_robot)
         return self.timesteps, self.collisions, self.num_waits
+    
+
+    def calculate_mean_variance(self):
+        """
+        Calculate the mean and variance of hitting times using sparse matrices and GMRES solver.
+        
+        Args:
+        - P (numpy array): The transition matrix.
+        - tol (float): Tolerance for the GMRES solver.
+        
+        Returns:
+        - HT_mu (numpy array): Mean hitting times.
+        - HT_variance (numpy array): Variance of the hitting times.
+        """
+        # Convert to sparse matrix
+        P_sparse = csc_matrix(self.Arena[:-1, :-1])  # Submatrix Q (non-absorbing states)
+        n = P_sparse.shape[0]  # Number of non-absorbing states
+        I_sparse = eye(n, format='csc')  # Identity matrix in sparse format
+
+        # Fundamental matrix N = (I - Q)^-1 using GMRES solver
+        def solve_gmres(A, b):
+            return gmres(A, b)[0]  # We only care about the solution vector
+
+        # Solve for HT_mu (mean hitting time)
+        IMQ = I_sparse - P_sparse # To simplify for (I-Q)
+        b = np.ones(n)  # Right-hand side is a vector of ones
+        HT_mu = solve_gmres(IMQ, b)  # Solve (I - Q) * HT_mu = b
+
+        # Solve for HT_variance using the formula (2N - I)HT_mu - HT_mu^2
+        HT_mu_squared = np.square(HT_mu)
+        HT_variance = solve_gmres(IMQ, (2 * HT_mu) - (IMQ * HT_mu) - (IMQ *  HT_mu_squared))
+        HT_std = np.sqrt(HT_variance)
+                
+        np.save('./mean_matrix.npy', HT_mu)
+        np.save('./variance_matrix.npy', HT_variance)
+        np.save('./std_matrix.npy', HT_std)
+
+        return HT_mu, HT_variance, HT_std
+    
+    # TODO: Check how sparse each of the array states I'm feeding into the algorithm
+    # TODO: Run checks to ensure if the matrix isn't singular
+    # NOTE: (I - Q)^(-1) = N
+
+    # extract the matrix
+    # ANALYZE THE BELOW CODE TO OPTIMIZE MY CODE:
+    # Q=Arena[0:matrixdim-1,0:matrixdim-1] # transition probability matrix for nonabsorbing states
+    # I=sp.sparse.identity(matrixdim-1)
+    # I_Q=I-Q 
+    # RHS=np.ones([matrixdim-1,1])
+    # n=I_Q.shape[0]
+    # M_x = lambda x: lg.spsolve(I_Q,x)
+    # M = lg.LinearOperator((n, n), M_x)
+    # print('GMRES start')
+    # solution=lg.gmres(I_Q,RHS,restart=20,M=M)
+    # gmres_flag=solution[1]
+    # print(f"GMRES end: {gmres_flag}")
+    # solution=solution[0] #solving the equation for mean
+    # solutionsq=np.ones([matrixdim-1,1])
+    # solution2=np.ones([matrixdim-1,1])
+    # for i in range (matrixdim-1):
+    #   solutionsq[i,0]=solution[i]*solution[i]
+    #   solution2[i,0]=solution[i]*2
+    # solutionarr=np.asarray(solution)
+    # solutionnew=np.zeros((matrixdim-1,1))
+    # for i in range(matrixdim-1):
+    #   solutionnew[i,0]=solutionarr[i]
+    # RHS=solution2-I_Q.dot(solutionnew)-I_Q.dot(solutionsq)
+    # var=lg.gmres(I_Q,RHS,restart=20,M=M)
+    # #solving for the variance
+
+    

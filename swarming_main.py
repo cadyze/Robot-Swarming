@@ -74,12 +74,20 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
             df.to_csv(csv_path, mode='a', header=False, index=False)
             df = df[0:0]
 
+# TODO: Caclculate the number of collisions waited and calculate probability to use for laziness
 
-# TODO: Add laziness parameter, percentage of staying put - only run on single robot simulations (don't apply in sensing range)
-# TODO: Starting position of initiation - POSTPONED
-# TODO: Initial orientation of robots - POSTPONED
+# run_simulation(61, 1, COLLISION_PROTOCOL.WAIT_NEXT, 0.03, starting_pos=STARTING_POSITION.FILL)
 
-run_simulation(61, 1, COLLISION_PROTOCOL.WAIT_NEXT, 0.03, starting_pos=STARTING_POSITION.FILL)
+g = 61
+R61_S = RobotSwarmingSimulator.SwarmSimulator(g, (g // 2, g // 2), obstacles=[], 
+                                                            starting_pos=STARTING_POSITION.FILL, laziness_prob=0, 
+                                                            sensing_range=1, for_math=True)
+
+mean, variance, std = R61_S.calculate_mean_variance()
+print("Mean: {}".format(mean))
+print("Variance: {}".format(variance))
+print("STD: {}".format(std))
+# RobotSwarmingSimulator.cal
 # run_simulation(31, 10, COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE,
 #                tracked_robot=9, starting_pos=STARTING_POSITION.FILL, show_graph=True)
 # run_simulation(61, 5, COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE,
@@ -105,3 +113,7 @@ run_simulation(61, 1, COLLISION_PROTOCOL.WAIT_NEXT, 0.03, starting_pos=STARTING_
 #                tracked_robot=0, starting_pos=STARTING_POSITION.SPACED)
 # run_simulation(61, 5, COLLISION_PROTOCOL.WAIT_NEXT,
 #                tracked_robot=0, starting_pos=STARTING_POSITION.EDGE)
+
+# TODO: Cross check with smaller arena sizes
+# TODO: Fix variance bugs
+# TODO: Laziness testing with variance
