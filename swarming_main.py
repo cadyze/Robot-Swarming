@@ -153,9 +153,17 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
 
 # TODO: Caclculate the number of collisions waited and calculate probability to use for laziness
 num_robots = 1
-g = 31
+g = 61
 
-run_simulation(g, num_robots, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=num_robots-1, generate_random_obs=True, show_graph=False)     
+# run_simulation(g, num_robots, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=num_robots-1, generate_random_obs=True, show_graph=False)     
+
+
+
+prob = 0
+math = RobotSwarmingSimulator.SwarmSimulator(g, (g // 2, g // 2), obstacles, 
+                                                            STARTING_POSITION.FILL, 1, prob, for_math=True)
+HTmu, HTvariance, HTstd = math.calculate_mean_variance()
+print("PROB: {} | HTMU: {} | HTVARIANCE: {} | HTSTD {}".format(prob, HTmu[0], HTvariance[0], HTstd[0]))
 # for prob in np.arange(0.0012, 0.0014, 0.0001):
 
 # TODO: Do the laziness and number robot simulations
