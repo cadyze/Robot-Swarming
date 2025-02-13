@@ -60,9 +60,9 @@ def graph_all():
                 df = pd.read_csv(file_path)
                 
                 # Check if 'M' column exists in the CSV
-                if 'Real-Time Elapsed' in df.columns:
+                if 'Timesteps' in df.columns:
                     # Extract the 'M' values
-                    m_values = df['Real-Time Elapsed'].values
+                    m_values = df['Timesteps'].values
                     
                     plt.clf()
 
@@ -71,7 +71,7 @@ def graph_all():
                     plt.hist(m_values, bins=30, alpha=0.7, color='blue', edgecolor='black')
                     
                     # Add labels and title
-                    plt.xlabel('Real-Time Elapsed')
+                    plt.xlabel('Timesteps')
                     plt.ylabel('Frequency')
                     plt.title(f'{file}')
 
@@ -98,9 +98,9 @@ def compute_mean_std(file_path):
     m_values = []
 
     # Check if 'Timesteps' column exists in the CSV
-    if 'Real-Time Elapsed' in df.columns:
+    if 'Timesteps' in df.columns:
         # Extract the 'M' values
-        m_values = df['Real-Time Elapsed'].values
+        m_values = df['Timesteps'].values
     
     return np.mean(m_values), np.std(m_values)
 

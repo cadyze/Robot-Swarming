@@ -58,7 +58,7 @@ def graph_arena(grid_size, target_coords, robot_history, obstacles, tracked_robo
                 index = robot_positions.index(node)
                 if index == tracked_robot:
                     tracked_robot_node = node
-                    node_color.append('green')
+                    node_color.append('cyan')
                 else:
                     node_color.append('red')
             else:
@@ -74,7 +74,7 @@ def graph_arena(grid_size, target_coords, robot_history, obstacles, tracked_robo
                 x_line = [pos[prev_pos][0], pos[curr_pos][0]]
                 y_line = [pos[prev_pos][1], pos[curr_pos][1]]
                 if i == tracked_robot:
-                    ax.plot(x_line, y_line, color='green')
+                    ax.plot(x_line, y_line, color='cyan')
                 else:
                     ax.plot(x_line, y_line, color='red')
 
