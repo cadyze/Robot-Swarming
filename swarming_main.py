@@ -116,7 +116,7 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
     iter = 0
 
     # Read the CSV file
-    df = pd.read_csv("A31_R1_LZP0_ST0/A31_R1_LZP0_ST0.csv")
+    df = pd.read_csv(csv_path)
     m_values = []
 
     # Check if 'Timesteps' column exists in the CSV
@@ -152,18 +152,19 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
         json.dump({"position_visits": position_visits_histories}, json_file)
 
 # TODO: Caclculate the number of collisions waited and calculate probability to use for laziness
-num_robots = 1
+num_robots = 5
 g = 61
 
-# run_simulation(g, num_robots, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=num_robots-1, generate_random_obs=True, show_graph=False)     
+# run_simulation(g, num_robots, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=num_robots-1, generate_random_obs=False, show_graph=True)    
+run_simulation(g, 1, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0.0014, tracked_robot=0, generate_random_obs=False, show_graph=False)     
 
 
 
-prob = 0
-math = RobotSwarmingSimulator.SwarmSimulator(g, (g // 2, g // 2), obstacles, 
-                                                            STARTING_POSITION.FILL, 1, prob, for_math=True)
-HTmu, HTvariance, HTstd = math.calculate_mean_variance()
-print("PROB: {} | HTMU: {} | HTVARIANCE: {} | HTSTD {}".format(prob, HTmu[0], HTvariance[0], HTstd[0]))
+# prob = 0
+# math = RobotSwarmingSimulator.SwarmSimulator(g, (g // 2, g // 2), obstacles, 
+#                                                             STARTING_POSITION.FILL, 1, prob, for_math=True)
+# HTmu, HTvariance, HTstd = math.calculate_mean_variance()
+# print("PROB: {} | HTMU: {} | HTVARIANCE: {} | HTSTD {}".format(prob, HTmu[0], HTvariance[0], HTstd[0]))
 # for prob in np.arange(0.0012, 0.0014, 0.0001):
 
 # TODO: Do the laziness and number robot simulations
