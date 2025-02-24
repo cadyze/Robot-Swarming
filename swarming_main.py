@@ -125,10 +125,9 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
         m_values = df['Timesteps'].values
 
     while True:
-        if(len(m_values) > 0):
-            mean, std = np.mean(m_values), np.std(m_values)
-            if np.round(HTmu[0], 1) - 1 == np.round(mean, 1) and np.round(HTstd[0], 1) == np.round(std, 1):
-                break
+        mean, std = np.mean(m_values), np.std(m_values)
+        if np.round(HTmu[0], 1) - 1 == np.round(mean, 1) and np.round(HTstd[0], 1) == np.round(std, 1):
+            break
 
         # Check if equivalent
         if iter % 250 == 0:
@@ -153,15 +152,15 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
         json.dump({"position_visits": position_visits_histories}, json_file)
 
 # TODO: Caclculate the number of collisions waited and calculate probability to use for laziness
-num_robots = 10
+num_robots = 5
 g = 61
 
-# run_simulation(g, num_robots, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=num_robots-1, generate_random_obs=True, show_graph=False)     
+# run_simulation(g, num_robots, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=num_robots-1, generate_random_obs=False, show_graph=True)    
+run_simulation(g, 1, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0.0014, tracked_robot=0, generate_random_obs=False, show_graph=False)     
 
 
 
-prob = 0
-run_simulation(g, 5, COLLISION_PROTOCOL.WAIT_NEXT, 0, 4)
+# prob = 0
 # math = RobotSwarmingSimulator.SwarmSimulator(g, (g // 2, g // 2), obstacles, 
 #                                                             STARTING_POSITION.FILL, 1, prob, for_math=True)
 # HTmu, HTvariance, HTstd = math.calculate_mean_variance()
