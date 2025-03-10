@@ -58,7 +58,7 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
         else:
             file_name += "_RR".format()
 
-    file_name += "_LZP{}".format(str(laziness_prob * 100).replace(".", ","))
+    file_name += "_LZP{}".format(str(round(laziness_prob * 100, 2)).replace(".", ","))
 
     if tracked_robot != -1:
         file_name += "_ST{}".format(0, 0, 0, grid_size)
@@ -107,11 +107,11 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
                                                                 starting_pos, sensing_range, laziness_prob, for_math=False, rand_rob_obs=generate_random_obs)
     moves, collisions = 0, 0
 
-    prob = 0
-    math = RobotSwarmingSimulator.SwarmSimulator(g, (g // 2, g // 2), obstacles, 
-                                                                STARTING_POSITION.FILL, 1, prob, for_math=True)
-    HTmu, HTvariance, HTstd = math.calculate_mean_variance()
-    print("PROB: {} | HTMU: {} | HTVARIANCE: {} | HTSTD {}".format(prob, HTmu[0], HTvariance[0], HTstd[0]))
+    # prob = 0
+    # math = RobotSwarmingSimulator.SwarmSimulator(g, (g // 2, g // 2), obstacles, 
+    #                                                             STARTING_POSITION.FILL, 1, prob, for_math=True)
+    # HTmu, HTvariance, HTstd = math.calculate_mean_variance()
+    # print("PROB: {} | HTMU: {} | HTVARIANCE: {} | HTSTD {}".format(prob, HTmu[0], HTvariance[0], HTstd[0]))
 
     iter = 0
 
@@ -124,14 +124,15 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
         # Extract the 'M' values
         m_values = df['Timesteps'].values
 
-    while True:
-        mean, std = np.mean(m_values), np.std(m_values)
-        if np.round(HTmu[0], 1) - 1 == np.round(mean, 1) and np.round(HTstd[0], 1) == np.round(std, 1):
-            break
+    while iter < 3000:
+        # mean, std = np.mean(m_values), np.std(m_values)
+        # if np.round(HTmu[0], 1) - 1 == np.round(mean, 1) and np.round(HTstd[0], 1) == np.round(std, 1):
+        #     break
 
         # Check if equivalent
         if iter % 250 == 0:
-            print("ITER: {} | MEAN: {} | STD: {}".format(iter, mean, std))
+            # print("ITER: {} | MEAN: {} | STD: {}".format(iter, mean, std))
+            print("ITER: {}".format(iter))
         iter += 1
         start_time = time.time()
         moves, collisions, steps_waited, pos_visited = RobotSwarmSimulator.start_robot_swarming(num_robots, collision_protocol, show_graph=show_graph, tracked_robot=tracked_robot)
@@ -152,11 +153,28 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
         json.dump({"position_visits": position_visits_histories}, json_file)
 
 # TODO: Caclculate the number of collisions waited and calculate probability to use for laziness
-num_robots = 5
-g = 61
+num_robots = 1
+g = 31
 
-# run_simulation(g, num_robots, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=num_robots-1, generate_random_obs=False, show_graph=True)    
-run_simulation(g, 1, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0.0014, tracked_robot=0, generate_random_obs=False, show_graph=False)     
+# run_simulation(g, 1, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=0, show_graph=True)
+for i in range(5, 10, 1):
+    run_simulation(g, i, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=num_robots-1, show_graph=False)
+    # i = round(i, 4)
+    # math = RobotSwarmingSimulator.SwarmSimulator(g, (g // 2, g // 2), obstacles,
+    #                                                         STARTING_POSITION.FILL, 1, i, for_math=True)
+    # HTmu, HTvariance, HTstd = math.calculate_mean_variance()
+    # print("PROB: {} | HTMU: {} | HTVARIANCE: {} | HTSTD {}".format(i, round(HTmu[0], 3), HTvariance[0], round(HTstd[0], 3)))
+
+
+# for i in np.arange(0.10, 0.11, 0.001):
+#     # run_simulation(g, 1, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=i, tracked_robot=0, for_math=True, show_graph=False)
+#     i = round(i, 4)
+#     math = RobotSwarmingSimulator.SwarmSimulator(g, (g // 2, g // 2), obstacles,
+#                                                             STARTING_POSITION.FILL, 1, i, for_math=True)
+#     HTmu, HTvariance, HTstd = math.calculate_mean_variance()
+#     print("PROB: {} | HTMU: {} | HTSTD {}".format(i, round(HTmu[0], 3), round(HTstd[0], 3)))
+# run_simulation(g, num_robots, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=num_robots-1, generate_random_obs=False, show_graph=False)    
+# run_simulation(g, 1, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0.0014, tracked_robot=0, generate_random_obs=False, show_graph=False)     
 
 
 
