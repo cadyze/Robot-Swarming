@@ -63,11 +63,11 @@ def fit_and_plot_gamma_distributions(gamma_data_list):
 
 # Example usage
 gamma_data_list = [
-    GammaData(csv='./A11/MULTI_R/RR/A11_R5_RR_LZP0_ST0_WN/A11_R5_RR_LZP0_ST0_WN.csv'),
-    # GammaData(csv='./A11/N_RR/A11_R5_FILL_LZP0_ST0_WN/A11_R5_FILL_LZP0_ST0_WN.csv'),
-    # GammaData(csv='./A11/N_RR/A11_R26_FILL_LZP0_ST0_WN/A11_R26_FILL_LZP0_ST0_WN.csv'),
-    # GammaData(csv='./A11_R13_RR_LZP0_ST0_WN/A11_R13_RR_LZP0_ST0_WN.csv'),
-    # GammaData(csv='./A11/N_RR/A11_R13_FILL_LZP0_ST0_WN/A11_R13_FILL_LZP0_ST0_WN.csv'),
+    # GammaData(csv='./A11/N_RR/A11_R1_LZP0_ST0/A11_R1_LZP0_ST0.csv'),
+    GammaData(csv='./A11/N_RR/A11_R5_FILL_LZP0_ST0_WN/A11_R5_FILL_LZP0_ST0_WN.csv'),
+    # GammaData(csv='./A61_R5_FILL_LZP0_ST0_WN/A61_R5_FILL_LZP0_ST0_WN.csv'),
+    # GammaData(csv='./A61_R1_LZP0,12_ST0/A61_R1_LZP0,12_ST0.csv'),
+    # GammaData(csv='./A61_R5_RR_LZ-0_ST0_WN.csv'),
     # GammaData(csv='./A61_R10_RR_LZ-0_ST0_WN.csv'),
     # GammaData(mean=1835.4358446260867, std=1617.2849372380126) # G61, LZ-0, ST0
     # GammaData(mean=15, std=3, data=np.random.gamma(shape=(15 / 3) ** 2, scale=3 ** 2 / 15, size=1000))
