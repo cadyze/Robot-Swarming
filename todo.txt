@@ -1,0 +1,15 @@
+Work on creating the overall spreadsheet
+Try fitting a gamma distribution onto the data (how far off it actually is, do both on theoretical and sample mean and std)
+    Kl-divergence - to measure the difference, research into what the return value is
+    Earth's movement - to measure the difference, research into what the return value is
+    First try fitting on no collisions, no other robots, then vary the laziness, find if the simulation matches theoretical (2-3 digits of accuracy)
+Reverse the ordering of robots to see if order protocol is a factor
+Test from different corners
+
+Search for cookie mode then find goal position mode (implement two different nodes)
+
+NO COLLISIONS:
+        gamma distribution of1
+
+
+Tracked robot moves after every 10 obstacles move.
