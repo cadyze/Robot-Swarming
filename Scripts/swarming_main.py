@@ -10,7 +10,6 @@ import numpy as np
 
 obstacles = []
 
-
 def state_to_info(state, grid_size):
     orientation = state % 6
     state //= 6
@@ -49,26 +48,55 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
     if tracked_robot > num_robots:
         raise Exception("ERROR: TRYING TO TRACK A ROBOT THAT DOESN'T EXIST.")
     
-    # Create dynamic .csv path
-    file_name = "A{}_R{}".format(grid_size, num_robots)
 
+    folder_paths = ["Data"]
+
+    folder_paths.append("A{}".format(grid_size)) # Arena size
+    
+    # If the robots are randomly generated or not
     if num_robots > 1:
-        if generate_random_obs == False:
-            file_name += "_{}".format(starting_pos.name)
+        if generate_random_obs:
+            folder_paths.append("RANDOM_SPAWNS")
         else:
-            file_name += "_RR".format()
+            folder_paths.append("NON-RANDOM_SPAWNS")
 
-    file_name += "_LZP{}".format(str(round(laziness_prob * 100, 2)).replace(".", ","))
+    # Laziness probabilities
+    folder_paths.append("LZP_{}".format(str(round(laziness_prob * 100, 2)))) # Testing whether '.' can be used
 
-    if tracked_robot != -1:
-        file_name += "_ST{}".format(0, 0, 0, grid_size)
-
+    # Collision protocols for multi-robot swarms
     if num_robots > 1:
         if collision_protocol == COLLISION_PROTOCOL.WAIT_NEXT:
-            file_name += "_WN"
+            folder_paths.append("WAIT_NEXT")
         elif collision_protocol == COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE:
-            file_name += "_FN"
-    csv_path = "{}/{}.csv".format(file_name, file_name)
+            folder_paths.append("FIND_NEXT")
+    
+    # Number of robots
+    folder_paths.append("R{}".format(num_robots))
+
+    # Tracked robot
+    if tracked_robot == -1:
+        folder_paths.append("T_FIRST")
+    else:
+        folder_paths.append("T_{}".format(tracked_robot))
+
+    path_to_folder = ""
+    def create_folder(path, folder_name):
+        combined_path = "{}/{}".format(path, folder_name)
+        print(combined_path)
+        if not os.path.exists(combined_path):
+            os.makedirs(combined_path)
+            print("Made folder!")
+
+    def create_nested_folders(folders):
+        current_path = "."
+        for folder in folders:
+            create_folder(current_path, folder)
+            current_path = "{}/{}".format(current_path, folder)
+        print("Final Path Created: {}".format(current_path))
+        return current_path
+
+    path_to_folder = create_nested_folders(folder_paths)
+    csv_path = "{}/SwarmSimulationData.csv".format(path_to_folder)
 
     # Setting up the dataframe for consistent .csv writing
     df = pd.DataFrame({
@@ -78,21 +106,14 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
         'Real-Time Elapsed': []
     })
 
-    # Check if the folder exists
-    if not os.path.exists(file_name):
-        os.makedirs(file_name)
-        print(f"Folder '{file_name}' created successfully!")
-    else:
-        print(f"Folder '{file_name}' already exists.")
-
     # Creates a new .csv if it doesn't exist
     if csv_path != "" and not os.path.isfile(csv_path):
         df.to_csv(csv_path, index=False)
         print(f"Created new CSV file at {csv_path}.")
 
-
+        
     # Save .json file holding information on paths and positions visited
-    path_file_name = "{}/PathData.json".format(file_name)  # JSON file name
+    path_file_name = "{}/PathData.json".format(path_to_folder)  # JSON file name
     position_visits_histories = []
 
     # Check if the file exists
@@ -101,6 +122,35 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
         with open(path_file_name, "r") as json_file:
             loaded_data = json.load(json_file)
         position_visits_histories = loaded_data.get("position_visits", [])  # Safely get the value of position_visits
+    
+    # Create dynamic .csv path
+    # file_name = "A{}_R{}".format(grid_size, num_robots)
+
+    # if num_robots > 1:
+    #     if generate_random_obs == False:
+    #         file_name += "_{}".format(starting_pos.name)
+    #     else:
+    #         file_name += "_RR".format()
+
+    # file_name += "_LZP{}".format(str(round(laziness_prob * 100, 2)).replace(".", ","))
+
+    # if tracked_robot != -1:
+    #     file_name += "_ST{}".format(0, 0, 0, grid_size)
+
+    # if num_robots > 1:
+    #     if collision_protocol == COLLISION_PROTOCOL.WAIT_NEXT:
+    #         file_name += "_WN"
+    #     elif collision_protocol == COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE:
+    #         file_name += "_FN"
+    # csv_path = "{}/{}.csv".format(file_name, file_name)
+
+
+    # Check if the folder exists
+    # if not os.path.exists(file_name):
+    #     os.makedirs(file_name)
+    #     print(f"Folder '{file_name}' created successfully!")
+    # else:
+    #     print(f"Folder '{file_name}' already exists.")
 
     # Create the SwarmingSimulation
     RobotSwarmSimulator = RobotSwarmingSimulator.SwarmSimulator(grid_size, (grid_size // 2, grid_size // 2), obstacles, 
