@@ -696,14 +696,14 @@ class SwarmSimulator:
         if (x, y) in current_positions:
             # Run a specified collision protocol
             if should_inc_val():
-                self.collisions += 1
+                self.collisions[robot_ind] += 1
 
             if collision_protocol == COLLISION_PROTOCOL.WAIT_NEXT:
                 # If collding with another robot, just return its current state
                 next_state = curr_states[robot_ind]
                 x, y, _ = self.state_to_info(next_state, grid_size)
                 if should_inc_val():
-                    self.num_waits += 1
+                    self.num_waits[robot_ind] += 1
             elif collision_protocol == COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE:
                 max_iters = 100
                 found_next = False
@@ -729,8 +729,8 @@ class SwarmSimulator:
             raise Exception("ERROR: TRYING TO TRACK A ROBOT THAT DOESN'T EXIST.")
         
         self.tracked_robot = tracked_robot
-        self.collisions = 0
-        self.num_waits = 0
+        self.collisions = [0 for _ in range(num_robots)]
+        self.num_waits = [0 for _ in range(num_robots)]
 
         def info_to_state(x, y, orientation):
             return 6 * (x + self.grid_size * y) + orientation
@@ -793,7 +793,6 @@ class SwarmSimulator:
         # Reverse so that the first robot is able to move out freely
         curr_states = curr_states[::-1]
 
-
         # For tracking the positions the robot has traveled to
         pos_visited = np.zeros((self.grid_size, self.grid_size))
 
@@ -803,7 +802,7 @@ class SwarmSimulator:
         current_positions = [(0, 0) for _ in range(num_robots)]
         robots_finished = [False for _ in range(num_robots)]
 
-        self.timesteps = 0
+        self.timesteps = [0 for _ in range(num_robots)]
         while not is_target_found:
             for robot_ind in range(num_robots):
                 x, y, _ = self.state_to_info(curr_states[robot_ind], self.grid_size)
@@ -816,6 +815,7 @@ class SwarmSimulator:
                         current_positions[robot_ind] = (-1, -1)
                     else:
                         curr_states[robot_ind], current_positions[robot_ind] = self.get_robot_next_move(curr_states, robot_ind, self.Arena, self.grid_size, current_positions, collision_protocol)
+                        self.timesteps[robot_ind] += 1
                 else:
                     # Code for tracking robots
                     if tracked_robot != -1:
@@ -834,12 +834,17 @@ class SwarmSimulator:
             # Check goals for wait for all
             if wait_for_all and all(robots_finished):
                 is_target_found = True
+                print("Found Target!")
             
-            self.timesteps += 1
+            # self.timesteps += 1
 
         if show_graph:
             graph_swarm.graph_arena(self.grid_size, self.target_pos, history, self.obstacles, self.tracked_robot)
-        return self.timesteps, self.collisions, self.num_waits, pos_visited
+
+        if(wait_for_all):
+            return self.timesteps, self.collisions, self.num_waits
+        elif(tracked_robot != -1):
+            return self.timesteps[tracked_robot], self.collisions[tracked_robot], self.num_waits[tracked_robot], pos_visited[tracked_robot]
     
 
     def calculate_mean_variance(self):

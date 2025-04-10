@@ -7,6 +7,7 @@ import time
 from RobotSwarmingSimulator import COLLISION_PROTOCOL, STARTING_POSITION
 import json
 import numpy as np
+import FileManager as FileManager
 
 obstacles = []
 
@@ -34,7 +35,7 @@ def compute_mean_std(file_path):
     
     return np.mean(m_values), np.std(m_values)
 
-def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tracked_robot=-1, show_graph=False, starting_pos=STARTING_POSITION.FILL, sensing_range=1, generate_random_obs=False):  
+def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tracked_robot=-1, show_graph=False, starting_pos=STARTING_POSITION.FILL, sensing_range=1, generate_random_obs=False, wait_all=False):  
     # Arena: 31x31, 61x61, 81x81
     # Number of Robots: 1, 5, 10, 20 -> 1, 3, 5, 10
     # Protocols: BREAK,  FIND NEXT AVAILABLE
@@ -48,80 +49,16 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
     if tracked_robot > num_robots:
         raise Exception("ERROR: TRYING TO TRACK A ROBOT THAT DOESN'T EXIST.")
     
-
-    folder_paths = ["Data"]
-
-    folder_paths.append("A{}".format(grid_size)) # Arena size
-    
-    # If the robots are randomly generated or not
-    if num_robots > 1:
-        if generate_random_obs:
-            folder_paths.append("RANDOM_SPAWNS")
-        else:
-            folder_paths.append("NON-RANDOM_SPAWNS")
-
-    # Laziness probabilities
-    folder_paths.append("LZP_{}".format(str(round(laziness_prob * 100, 2)))) # Testing whether '.' can be used
-
-    # Collision protocols for multi-robot swarms
-    if num_robots > 1:
-        if collision_protocol == COLLISION_PROTOCOL.WAIT_NEXT:
-            folder_paths.append("WAIT_NEXT")
-        elif collision_protocol == COLLISION_PROTOCOL.FIND_NEXT_AVAILABLE:
-            folder_paths.append("FIND_NEXT")
-    
-    # Number of robots
-    folder_paths.append("R{}".format(num_robots))
-
-    # Tracked robot
-    if tracked_robot == -1:
-        folder_paths.append("T_FIRST")
-    else:
-        folder_paths.append("T_{}".format(tracked_robot))
-
-    path_to_folder = ""
-    def create_folder(path, folder_name):
-        combined_path = "{}/{}".format(path, folder_name)
-        print(combined_path)
-        if not os.path.exists(combined_path):
-            os.makedirs(combined_path)
-            print("Made folder!")
-
-    def create_nested_folders(folders):
-        current_path = "."
-        for folder in folders:
-            create_folder(current_path, folder)
-            current_path = "{}/{}".format(current_path, folder)
-        print("Final Path Created: {}".format(current_path))
-        return current_path
-
-    path_to_folder = create_nested_folders(folder_paths)
-    csv_path = "{}/SwarmSimulationData.csv".format(path_to_folder)
-
-    # Setting up the dataframe for consistent .csv writing
-    df = pd.DataFrame({
-        'Timesteps': [],
-        'Collisions': [],
-        'Steps Waited': [],
-        'Real-Time Elapsed': []
-    })
-
-    # Creates a new .csv if it doesn't exist
-    if csv_path != "" and not os.path.isfile(csv_path):
-        df.to_csv(csv_path, index=False)
-        print(f"Created new CSV file at {csv_path}.")
-
-        
     # Save .json file holding information on paths and positions visited
-    path_file_name = "{}/PathData.json".format(path_to_folder)  # JSON file name
-    position_visits_histories = []
+    # path_file_name = "{}/PathData.json".format(path_to_folder)  # JSON file name
+    # position_visits_histories = []
 
-    # Check if the file exists
-    if os.path.exists(path_file_name):
-        # Load the file
-        with open(path_file_name, "r") as json_file:
-            loaded_data = json.load(json_file)
-        position_visits_histories = loaded_data.get("position_visits", [])  # Safely get the value of position_visits
+    # # Check if the file exists
+    # if os.path.exists(path_file_name):
+    #     # Load the file
+    #     with open(path_file_name, "r") as json_file:
+    #         loaded_data = json.load(json_file)
+    #     position_visits_histories = loaded_data.get("position_visits", [])  # Safely get the value of position_visits
     
     # Create dynamic .csv path
     # file_name = "A{}_R{}".format(grid_size, num_robots)
@@ -155,7 +92,7 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
     # Create the SwarmingSimulation
     RobotSwarmSimulator = RobotSwarmingSimulator.SwarmSimulator(grid_size, (grid_size // 2, grid_size // 2), obstacles, 
                                                                 starting_pos, sensing_range, laziness_prob, for_math=False, rand_rob_obs=generate_random_obs)
-    moves, collisions = 0, 0
+    # # moves, collisions = 0, 0
 
     # prob = 0
     # math = RobotSwarmingSimulator.SwarmSimulator(g, (g // 2, g // 2), obstacles, 
@@ -163,16 +100,26 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
     # HTmu, HTvariance, HTstd = math.calculate_mean_variance()
     # print("PROB: {} | HTMU: {} | HTVARIANCE: {} | HTSTD {}".format(prob, HTmu[0], HTvariance[0], HTstd[0]))
 
+    # Creating a .csv for the tracked robot or all
+    robot_csvs = []
+    if(wait_all):
+        for robot_ind in range(num_robots):
+            robot_csvs.append(FileManager.getCSVFromSwarmParameters(grid_size=grid_size, num_robots=num_robots, generate_random_obs=generate_random_obs, 
+                                                                    laziness_prob=laziness_prob, collision_protocol=collision_protocol, tracked_robot=robot_ind))
+    else:
+        robot_csvs.append(FileManager.getCSVFromSwarmParameters(grid_size=grid_size, num_robots=num_robots, generate_random_obs=generate_random_obs, 
+                                                                    laziness_prob=laziness_prob, collision_protocol=collision_protocol, tracked_robot=tracked_robot))
+
     iter = 0
 
     # Read the CSV file
-    df = pd.read_csv(csv_path)
-    m_values = []
+    # df = pd.read_csv(csv_path)
+    # m_values = []
 
     # Check if 'Timesteps' column exists in the CSV
-    if 'Timesteps' in df.columns:
+    # if 'Timesteps' in df.columns:
         # Extract the 'M' values
-        m_values = df['Timesteps'].values
+        # m_values = df['Timesteps'].values
 
     while iter < 3000:
         # mean, std = np.mean(m_values), np.std(m_values)
@@ -185,28 +132,34 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
             print("ITER: {}".format(iter))
         iter += 1
         start_time = time.time()
-        moves, collisions, steps_waited, pos_visited = RobotSwarmSimulator.start_robot_swarming(num_robots, collision_protocol, show_graph=show_graph, tracked_robot=tracked_robot)
+        moves, collisions, steps_waited = RobotSwarmSimulator.start_robot_swarming(num_robots, collision_protocol, show_graph=show_graph, tracked_robot=tracked_robot, wait_for_all=wait_all)
+        print("ITER {}: {}".format(iter, moves))
         time_elapsed = time.time() - start_time
 
-        # If given a .csv, write the data to it
-        if csv_path != "":
-            df.loc[len(df)] = [moves, collisions, steps_waited, time_elapsed]
-            df.to_csv(csv_path, mode='a', header=False, index=False)
-            df = df[0:0]
+        # Writing to .csv
+        if(wait_all):
+            for robot_ind in range(num_robots):
+                FileManager.patchSwarmCSV(robot_csvs[robot_ind], moves[robot_ind], collisions[robot_ind], moves[robot_ind], time_elapsed)
+        else:
+            FileManager.patchSwarmCSV(robot_csvs[0], moves[0], collisions[0], steps_waited[0], time_elapsed)
+        # # If given a .csv, write the data to it
+        # if csv_path != "":
+        #     df.loc[len(df)] = [moves, collisions, steps_waited, time_elapsed]
+        #     df.to_csv(csv_path, mode='a', header=False, index=False)
+        #     df = df[0:0]
         
         # Append path history to path data
-        position_visits_histories.append(pos_visited.tolist())
-        m_values = np.append(m_values, moves)
+        # position_visits_histories.append(pos_visited.tolist())
+        # m_values = np.append(m_values, moves)
     
     # Add the path data to the path
-    with open(path_file_name, "w") as json_file:
-        json.dump({"position_visits": position_visits_histories}, json_file)
+    # with open(path_file_name, "w") as json_file:
+    #     json.dump({"position_visits": position_visits_histories}, json_file)
 
 # TODO: Caclculate the number of collisions waited and calculate probability to use for laziness
-num_robots = 16
-g = 31
-i=num_robots
-run_simulation(g, i, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=i-1, show_graph=False, generate_random_obs=True)
+num_robots = 3
+g = 11
+run_simulation(g, num_robots, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, show_graph=False, generate_random_obs=False, wait_all=True)
 
 # run_simulation(g, 1, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=0, show_graph=True)
 # run_simulation(g, 1, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=num_robots-1, show_graph=False, generate_random_obs=False)
