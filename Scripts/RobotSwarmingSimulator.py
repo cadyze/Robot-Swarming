@@ -834,7 +834,7 @@ class SwarmSimulator:
             # Check goals for wait for all
             if wait_for_all and all(robots_finished):
                 is_target_found = True
-                print("Found Target!")
+                # print("Found Target!")
             
             # self.timesteps += 1
 

@@ -133,7 +133,7 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
         iter += 1
         start_time = time.time()
         moves, collisions, steps_waited = RobotSwarmSimulator.start_robot_swarming(num_robots, collision_protocol, show_graph=show_graph, tracked_robot=tracked_robot, wait_for_all=wait_all)
-        print("ITER {}: {}".format(iter, moves))
+        # print("ITER {}: {}".format(iter, moves))
         time_elapsed = time.time() - start_time
 
         # Writing to .csv
@@ -157,9 +157,10 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
     #     json.dump({"position_visits": position_visits_histories}, json_file)
 
 # TODO: Caclculate the number of collisions waited and calculate probability to use for laziness
-num_robots = 3
-g = 11
-run_simulation(g, num_robots, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, show_graph=False, generate_random_obs=False, wait_all=True)
+# num_robots = 10
+for num_robots in range(16, 21):
+    g = 61
+    run_simulation(g, num_robots, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, show_graph=False, generate_random_obs=False, wait_all=True)
 
 # run_simulation(g, 1, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=0, show_graph=True)
 # run_simulation(g, 1, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=num_robots-1, show_graph=False, generate_random_obs=False)
