@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 def load_robot_timesteps(root_dir):
     """Loads timesteps from all T#/data.csv files into a dict."""
@@ -33,7 +34,7 @@ def compute_simulation_stats(robot_data):
 
 def plot_timestep_ranges(min_vals, max_vals, avg_vals, output_path="timesteps_line_plot.png"):
     plt.figure(figsize=(12, 6))
-    plt.plot(min_vals, label="Fastest (Min) | Avg: {}".format(sum(min_vals) / len(min_vals)), color='green', marker='o')
+    plt.plot(min_vals, label="Fastest (Min) | Avg: {} | STD: {}".format(sum(min_vals) / len(min_vals), np.std(min_vals)), color='green', marker='o')
     plt.plot(max_vals, label="Slowest (Max) | Avg: {}".format(sum(max_vals) / len(max_vals)), color='red', marker='o')
     plt.plot(avg_vals, label="Average: {}".format(sum(avg_vals) / len(avg_vals)), color='blue', marker='o')
 

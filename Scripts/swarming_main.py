@@ -8,6 +8,7 @@ from RobotSwarmingSimulator import COLLISION_PROTOCOL, STARTING_POSITION
 import json
 import numpy as np
 import FileManager as FileManager
+import SimulatorMath
 
 obstacles = []
 
@@ -158,9 +159,12 @@ def run_simulation(grid_size, num_robots, collision_protocol, laziness_prob, tra
 
 # TODO: Caclculate the number of collisions waited and calculate probability to use for laziness
 # num_robots = 10
-for num_robots in range(10, 21):
-    g = 31
-    run_simulation(g, num_robots, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, show_graph=False, generate_random_obs=False, wait_all=True)
+# for num_robots in range(10, 21):    
+#     g = 31
+#     run_simulation(g, num_robots, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, show_graph=False, generate_random_obs=False, wait_all=True)
+
+# solver = new SimulatorMath()
+# solver.
 
 # run_simulation(g, 1, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=0, show_graph=True)
 # run_simulation(g, 1, COLLISION_PROTOCOL.WAIT_NEXT, laziness_prob=0, tracked_robot=num_robots-1, show_graph=False, generate_random_obs=False)
