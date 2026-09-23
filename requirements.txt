@@ -1,0 +1,9 @@
+# Runtime dependencies
+matplotlib
+networkx
+numpy
+pandas
+scipy
+
+# Test dependencies
+pytest

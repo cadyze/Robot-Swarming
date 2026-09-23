@@ -1,0 +1,158 @@
+{
+  "arenas": [
+    {
+      "name": "grid4_base",
+      "grid_size": 4,
+      "laziness_prob": 0.0,
+      "sensing_range": 1,
+      "obstacles": [],
+      "for_math": false,
+      "arena_shape": [
+        96,
+        96
+      ],
+      "row_sum_min": 1.0,
+      "row_sum_max": 1.0
+    },
+    {
+      "name": "grid5_base",
+      "grid_size": 5,
+      "laziness_prob": 0.0,
+      "sensing_range": 1,
+      "obstacles": [],
+      "for_math": false,
+      "arena_shape": [
+        150,
+        150
+      ],
+      "row_sum_min": 0.9999999999999999,
+      "row_sum_max": 1.0
+    },
+    {
+      "name": "grid5_lazy",
+      "grid_size": 5,
+      "laziness_prob": 0.1,
+      "sensing_range": 1,
+      "obstacles": [],
+      "for_math": false,
+      "arena_shape": [
+        150,
+        150
+      ],
+      "row_sum_min": 1.0,
+      "row_sum_max": 1.1
+    },
+    {
+      "name": "grid5_sense2",
+      "grid_size": 5,
+      "laziness_prob": 0.0,
+      "sensing_range": 2,
+      "obstacles": [],
+      "for_math": false,
+      "arena_shape": [
+        150,
+        150
+      ],
+      "row_sum_min": 0.9999999999999999,
+      "row_sum_max": 1.0
+    },
+    {
+      "name": "grid13_sense3",
+      "grid_size": 13,
+      "laziness_prob": 0.0,
+      "sensing_range": 3,
+      "obstacles": [],
+      "for_math": false,
+      "arena_shape": [
+        1014,
+        1014
+      ],
+      "row_sum_min": 0.9999999999999999,
+      "row_sum_max": 1.0
+    },
+    {
+      "name": "grid7_obstacle",
+      "grid_size": 7,
+      "laziness_prob": 0.05,
+      "sensing_range": 1,
+      "obstacles": [
+        [
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            2,
+            1
+          ]
+        ]
+      ],
+      "for_math": false,
+      "arena_shape": [
+        294,
+        294
+      ],
+      "row_sum_min": 0.9999999999999998,
+      "row_sum_max": 1.05
+    },
+    {
+      "name": "grid4_formath",
+      "grid_size": 4,
+      "laziness_prob": 0.0,
+      "sensing_range": 1,
+      "obstacles": [],
+      "for_math": true,
+      "arena_shape": [
+        97,
+        97
+      ],
+      "row_sum_min": 0.0,
+      "row_sum_max": 1.0
+    },
+    {
+      "name": "grid5_lazy_formath",
+      "grid_size": 5,
+      "laziness_prob": 0.1,
+      "sensing_range": 1,
+      "obstacles": [],
+      "for_math": true,
+      "arena_shape": [
+        151,
+        151
+      ],
+      "row_sum_min": 0.0,
+      "row_sum_max": 1.1
+    }
+  ],
+  "mean_var": [
+    {
+      "name": "mv_grid4",
+      "grid_size": 4,
+      "laziness_prob": 0.0,
+      "mu0": 6.145496729976312,
+      "std0": 1.9749829915942496
+    },
+    {
+      "name": "mv_grid5",
+      "grid_size": 5,
+      "laziness_prob": 0.05,
+      "mu0": 6.367305828660319,
+      "std0": 2.15434813284163
+    }
+  ],
+  "stochastic_baseline": {
+    "n_samples": 400,
+    "mean": 5.31,
+    "std": 2.175752743305176,
+    "min": 3,
+    "max": 17
+  }
+}
